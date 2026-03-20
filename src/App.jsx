@@ -16,6 +16,10 @@ function App() {
   const [actions, setActions] = useState([{ isCrit: false, parts: [{ ...defaultPart }] }]);
   const [results, setResults] = useState([]);
   const [expandedBreakdowns, setExpandedBreakdowns] = useState(new Set());
+  const clearDerivedState = () => {
+  setResults([]);
+  setExpandedBreakdowns(new Set());
+};
 
   // Helper function to calculate final damage with all modifiers
   const calculateFinalDamage = (result, isCrit, vulnerable, resistant) => {
@@ -51,24 +55,28 @@ function App() {
   };
 
   const addAction = () => {
-    setActions([...actions, { isCrit: false, parts: [{ ...defaultPart }] }]);
-  };
+  setActions([...actions, { isCrit: false, parts: [{ ...defaultPart }] }]);
+  clearDerivedState();
+};
 
   const removeAction = (index) => {
-    setActions(actions.filter((_, i) => i !== index));
-  };
+  setActions(actions.filter((_, i) => i !== index));
+  clearDerivedState();
+};
 
   const addPart = (actionIndex) => {
-    const updated = [...actions];
-    updated[actionIndex].parts.push({ ...defaultPart });
-    setActions(updated);
-  };
+  const updated = [...actions];
+  updated[actionIndex].parts.push({ ...defaultPart });
+  setActions(updated);
+  clearDerivedState();
+};
 
   const removePart = (actionIndex, partIndex) => {
-    const updated = [...actions];
-    updated[actionIndex].parts.splice(partIndex, 1);
-    setActions(updated);
-  };
+  const updated = [...actions];
+  updated[actionIndex].parts.splice(partIndex, 1);
+  setActions(updated);
+  clearDerivedState();
+};
 
   const validateAndSetNumber = (actionIndex, partIndex, field, value, defaultValue = '0', minValue = null) => {
     const parsed = parseInt(value, 10);
@@ -136,13 +144,20 @@ function App() {
 
   // Calculate live grand total using the helper function
   const liveGrandTotal = results.reduce((totalSum, group, actionIndex) => {
-    return totalSum + group.reduce((sum, result, partIndex) => {
-      const action = actions[actionIndex];
-      const part = action.parts[partIndex];
-      const finalDamage = calculateFinalDamage(result, action.isCrit, part.vulnerable, part.resistant);
-      return sum + finalDamage;
-    }, 0);
+  return totalSum + group.reduce((sum, result, partIndex) => {
+    const action = actions[actionIndex];
+    if (!action) return sum;
+    const part = action.parts[partIndex];
+    if (!part) return sum;
+    const finalDamage = calculateFinalDamage(
+      result,
+      action.isCrit,
+      part.vulnerable,
+      part.resistant
+    );
+    return sum + finalDamage;
   }, 0);
+}, 0);
 
   return (
     <div style={{ padding: '2rem', fontFamily: 'sans-serif', maxWidth: '900px' }}>
@@ -302,8 +317,10 @@ function App() {
           <h2>Results</h2>
           {results.map((group, actionIndex) => {
             const action = actions[actionIndex];
+            if (!action) return null;
             const actionTotal = group.reduce((sum, result, partIndex) => {
               const part = action.parts[partIndex];
+              if (!part) return sum;
               return sum + calculateFinalDamage(result, action.isCrit, part.vulnerable, part.resistant);
             }, 0);
 
@@ -314,6 +331,7 @@ function App() {
                   const key = `${actionIndex}-${partIndex}`;
                   const isExpanded = expandedBreakdowns.has(key);
                   const part = action.parts[partIndex];
+                  if (!part) return null;
                   const finalDamage = calculateFinalDamage(result, action.isCrit, part.vulnerable, part.resistant);
                   
                   return (
