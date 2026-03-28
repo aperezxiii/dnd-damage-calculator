@@ -51,168 +51,353 @@ export default function ResultsPanel({
   );
 
   return (
-    <div style={{ marginTop: '2rem' }}>
-      <h2>Results</h2>
+    <div style={{ marginTop: '2.5rem' }}>
+      <div style={{ marginBottom: '1.5rem' }}>
+        <h2
+          style={{
+            margin: 0,
+            fontSize: '1.75rem',
+            fontWeight: '700',
+            color: '#111827',
+          }}
+        >
+          Results
+        </h2>
+        <p
+          style={{
+            margin: '0.35rem 0 0 0',
+            fontSize: '0.95rem',
+            color: '#6b7280',
+          }}
+        >
+          Review totals, damage types, and detailed roll breakdowns.
+        </p>
+      </div>
 
-      {results.map((group, actionIndex) => {
-        const action = actions[actionIndex];
-        if (!action) return null;
-
-        const actionTotal = group.reduce((sum, result, partIndex) => {
-          const part = action.parts[partIndex];
-          if (!part) return sum;
-
-          return sum + calculateFinalDamage(
-            result,
-            action.critType,
-            part.vulnerable,
-            part.resistant
-          );
-        }, 0);
-
-        return (
-          <div
-            key={actionIndex}
-            style={{
-              marginBottom: '1.5rem',
-              padding: '1rem',
-              backgroundColor: '#f9f9f9',
-              borderRadius: '8px',
-            }}
-          >
-            <h3 style={{ margin: '0 0 1rem 0' }}>
-              Attack Action {actionIndex + 1} Total: {actionTotal}
-            </h3>
-
-            <div style={{ marginBottom: '0.75rem', color: '#555', fontSize: '0.95rem' }}>
-              Crit Mode: <strong>{getCritModeLabel(action.critType)}</strong>
-            </div>
-
-            {group.map((result, partIndex) => {
-              const key = `${actionIndex}-${partIndex}`;
-              const isExpanded = expandedBreakdowns.has(key);
-              const part = action.parts[partIndex];
-              if (!part) return null;
-
-              const finalDamage = calculateFinalDamage(
-                result,
-                action.critType,
-                part.vulnerable,
-                part.resistant
-              );
-
-              const preAdjustmentDamage = getPreAdjustmentDamage(result, action.critType);
-
-              return (
-                <div
-                  key={partIndex}
-                  style={{ color: getColorByType(result.type), marginBottom: '0.75rem' }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-                    <strong>{result.type}</strong> – {finalDamage}
-                    <span style={{ color: '#666', fontSize: '0.9rem' }}>
-                      ({getCritSummary(result, action.critType)})
-                    </span>
-                    <button
-                      onClick={() => toggleBreakdown(actionIndex, partIndex)}
-                      style={{
-                        fontSize: '0.8rem',
-                        padding: '0.25rem 0.5rem',
-                        borderRadius: '4px',
-                        border: '1px solid #ccc',
-                        backgroundColor: 'white',
-                      }}
-                    >
-                      {isExpanded ? 'Hide Breakdown' : 'Show Breakdown'}
-                    </button>
-                  </div>
-
-                  {isExpanded && (
-                    <div
-                      style={{
-                        fontSize: '0.9rem',
-                        marginLeft: '1rem',
-                        marginTop: '0.5rem',
-                        color: '#666',
-                        backgroundColor: 'white',
-                        padding: '0.5rem',
-                        borderRadius: '4px',
-                      }}
-                    >
-                      <div>
-                        ▸ Base Roll: {result.breakdown.count}d{result.breakdown.sides} = [{result.breakdown.baseRolled.join(', ')}]
-                        {formatModifier(result.modifier ?? 0)}
-                      </div>
-
-                      {action.critType === 'max' && (
-                        <div>▸ Crit Bonus (Max Dice): {result.maxDice}</div>
-                      )}
-
-                      {action.critType === 'reroll' && (
-                        <div>
-                          ▸ Crit Roll: {result.breakdown.count}d{result.breakdown.sides} = [{result.breakdown.critRolled.join(', ')}]
-                        </div>
-                      )}
-
-                      {action.critType === 'double' && (
-                        <div>▸ Doubled Dice Total: {result.diceTotal} × 2 = {result.diceTotal * 2}</div>
-                      )}
-
-                      <div>▸ Pre-Adjustment Damage: {preAdjustmentDamage}</div>
-                      <div>▸ Vulnerable: {part.vulnerable ? 'Yes' : 'No'}</div>
-                      <div>▸ Resistant: {part.resistant ? 'Yes' : 'No'}</div>
-                      <div><strong>▸ Final Damage: {finalDamage}</strong></div>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        );
-      })}
+      <div
+        style={{
+          marginBottom: '1.75rem',
+          padding: '1.25rem',
+          background: 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)',
+          color: 'white',
+          borderRadius: '16px',
+          textAlign: 'center',
+          boxShadow: '0 10px 25px rgba(0,0,0,0.10)',
+        }}
+      >
+        <div
+          style={{
+            fontSize: '0.9rem',
+            fontWeight: '600',
+            opacity: 0.9,
+            marginBottom: '0.35rem',
+            letterSpacing: '0.02em',
+          }}
+        >
+          GRAND TOTAL DAMAGE
+        </div>
+        <div
+          style={{
+            fontSize: '2.25rem',
+            fontWeight: '800',
+            lineHeight: 1.1,
+          }}
+        >
+          {liveGrandTotal}
+        </div>
+      </div>
 
       {sortedGroupedTotals.length > 0 && (
         <div
           style={{
-            marginTop: '1.5rem',
-            padding: '1rem',
-            backgroundColor: '#f4f4f4',
-            borderRadius: '8px',
+            marginBottom: '1.75rem',
+            padding: '1.25rem',
+            backgroundColor: '#ffffff',
+            border: '1px solid #e5e7eb',
+            borderRadius: '14px',
+            boxShadow: '0 4px 14px rgba(0,0,0,0.04)',
           }}
         >
-          <h3 style={{ margin: '0 0 0.75rem 0' }}>Damage by Type</h3>
+          <h3
+            style={{
+              margin: '0 0 1rem 0',
+              fontSize: '1.1rem',
+              fontWeight: '700',
+              color: '#111827',
+            }}
+          >
+            Damage by Type
+          </h3>
 
-          {sortedGroupedTotals.map(([type, total]) => (
-            <div
-              key={type}
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: '0.5rem',
-                color: getColorByType(type),
-                fontWeight: 'bold',
-              }}
-            >
-              <span>{type}</span>
-              <span>{total}</span>
-            </div>
-          ))}
+          <div style={{ display: 'grid', gap: '0.65rem' }}>
+            {sortedGroupedTotals.map(([type, total]) => (
+              <div
+                key={type}
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: '0.75rem 0.9rem',
+                  backgroundColor: '#f9fafb',
+                  border: '1px solid #f3f4f6',
+                  borderRadius: '10px',
+                }}
+              >
+                <span
+                  style={{
+                    color: getColorByType(type),
+                    fontWeight: '700',
+                  }}
+                >
+                  {type}
+                </span>
+                <span
+                  style={{
+                    color: '#111827',
+                    fontWeight: '700',
+                    fontSize: '1rem',
+                  }}
+                >
+                  {total}
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
-      <h2
-        style={{
-          marginTop: '2rem',
-          padding: '1rem',
-          backgroundColor: '#4CAF50',
-          color: 'white',
-          borderRadius: '8px',
-          textAlign: 'center',
-        }}
-      >
-        🔥 Grand Total Damage: {liveGrandTotal}
-      </h2>
+      <div style={{ display: 'grid', gap: '1rem' }}>
+        {results.map((group, actionIndex) => {
+          const action = actions[actionIndex];
+          if (!action) return null;
+
+          const actionTotal = group.reduce((sum, result, partIndex) => {
+            const part = action.parts[partIndex];
+            if (!part) return sum;
+
+            return sum + calculateFinalDamage(
+              result,
+              action.critType,
+              part.vulnerable,
+              part.resistant
+            );
+          }, 0);
+
+          return (
+            <div
+              key={actionIndex}
+              style={{
+                padding: '1.25rem',
+                backgroundColor: '#ffffff',
+                border: '1px solid #e5e7eb',
+                borderRadius: '14px',
+                boxShadow: '0 4px 14px rgba(0,0,0,0.04)',
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'flex-start',
+                  gap: '1rem',
+                  flexWrap: 'wrap',
+                  marginBottom: '1rem',
+                }}
+              >
+                <div>
+                  <h3
+                    style={{
+                      margin: 0,
+                      fontSize: '1.15rem',
+                      fontWeight: '700',
+                      color: '#111827',
+                    }}
+                  >
+                    Attack Action {actionIndex + 1}
+                  </h3>
+                  <div
+                    style={{
+                      marginTop: '0.35rem',
+                      color: '#6b7280',
+                      fontSize: '0.95rem',
+                    }}
+                  >
+                    Crit Mode: <strong style={{ color: '#111827' }}>{getCritModeLabel(action.critType)}</strong>
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    padding: '0.65rem 0.9rem',
+                    backgroundColor: '#f3f4f6',
+                    borderRadius: '10px',
+                    minWidth: '120px',
+                    textAlign: 'center',
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: '0.75rem',
+                      fontWeight: '700',
+                      color: '#6b7280',
+                      letterSpacing: '0.03em',
+                    }}
+                  >
+                    ACTION TOTAL
+                  </div>
+                  <div
+                    style={{
+                      fontSize: '1.35rem',
+                      fontWeight: '800',
+                      color: '#111827',
+                      marginTop: '0.15rem',
+                    }}
+                  >
+                    {actionTotal}
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gap: '0.85rem' }}>
+                {group.map((result, partIndex) => {
+                  const key = `${actionIndex}-${partIndex}`;
+                  const isExpanded = expandedBreakdowns.has(key);
+                  const part = action.parts[partIndex];
+                  if (!part) return null;
+
+                  const finalDamage = calculateFinalDamage(
+                    result,
+                    action.critType,
+                    part.vulnerable,
+                    part.resistant
+                  );
+
+                  const preAdjustmentDamage = getPreAdjustmentDamage(result, action.critType);
+
+                  return (
+                    <div
+                      key={partIndex}
+                      style={{
+                        padding: '0.9rem 1rem',
+                        backgroundColor: '#f9fafb',
+                        border: '1px solid #f3f4f6',
+                        borderRadius: '12px',
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          gap: '0.75rem',
+                          flexWrap: 'wrap',
+                        }}
+                      >
+                        <div style={{ flex: '1 1 420px' }}>
+                          <div
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.5rem',
+                              flexWrap: 'wrap',
+                              marginBottom: '0.35rem',
+                            }}
+                          >
+                            <strong
+                              style={{
+                                color: getColorByType(result.type),
+                                fontSize: '1rem',
+                              }}
+                            >
+                              {result.type}
+                            </strong>
+                            <span
+                              style={{
+                                fontSize: '1.15rem',
+                                fontWeight: '800',
+                                color: '#111827',
+                              }}
+                            >
+                              {finalDamage}
+                            </span>
+                          </div>
+
+                          <div
+                            style={{
+                              color: '#6b7280',
+                              fontSize: '0.92rem',
+                              lineHeight: 1.4,
+                            }}
+                          >
+                            {getCritSummary(result, action.critType)}
+                          </div>
+                        </div>
+
+                        <button
+                          onClick={() => toggleBreakdown(actionIndex, partIndex)}
+                          style={{
+                            fontSize: '0.85rem',
+                            fontWeight: '600',
+                            padding: '0.5rem 0.75rem',
+                            borderRadius: '8px',
+                            border: '1px solid #d1d5db',
+                            backgroundColor: '#ffffff',
+                            color: '#111827',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          {isExpanded ? 'Hide Breakdown' : 'Show Breakdown'}
+                        </button>
+                      </div>
+
+                      {isExpanded && (
+                        <div
+                          style={{
+                            marginTop: '0.85rem',
+                            padding: '0.85rem',
+                            backgroundColor: '#ffffff',
+                            border: '1px solid #e5e7eb',
+                            borderRadius: '10px',
+                            color: '#4b5563',
+                            fontSize: '0.92rem',
+                            lineHeight: 1.6,
+                          }}
+                        >
+                          <div>
+                            ▸ Base Roll: {result.breakdown.count}d{result.breakdown.sides} = [{result.breakdown.baseRolled.join(', ')}]
+                            {formatModifier(result.modifier ?? 0)}
+                          </div>
+
+                          {action.critType === 'max' && (
+                            <div>▸ Crit Bonus (Max Dice): {result.maxDice}</div>
+                          )}
+
+                          {action.critType === 'reroll' && (
+                            <div>
+                              ▸ Crit Roll: {result.breakdown.count}d{result.breakdown.sides} = [{result.breakdown.critRolled.join(', ')}]
+                            </div>
+                          )}
+
+                          {action.critType === 'double' && (
+                            <div>▸ Doubled Dice Total: {result.diceTotal} × 2 = {result.diceTotal * 2}</div>
+                          )}
+
+                          <div>▸ Pre-Adjustment Damage: {preAdjustmentDamage}</div>
+                          <div>▸ Vulnerable: {part.vulnerable ? 'Yes' : 'No'}</div>
+                          <div>▸ Resistant: {part.resistant ? 'Yes' : 'No'}</div>
+                          <div style={{ marginTop: '0.35rem', fontWeight: '700', color: '#111827' }}>
+                            ▸ Final Damage: {finalDamage}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

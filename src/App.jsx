@@ -192,105 +192,176 @@ function App() {
       return sum + finalDamage;
     }, 0);
   }, 0);
+
   const groupedDamageTotals = results.reduce((totals, group, actionIndex) => {
-  const action = actions[actionIndex];
-  if (!action) return totals;
+    const action = actions[actionIndex];
+    if (!action) return totals;
 
-  group.forEach((result, partIndex) => {
-    const part = action.parts[partIndex];
-    if (!part) return;
+    group.forEach((result, partIndex) => {
+      const part = action.parts[partIndex];
+      if (!part) return;
 
-    const finalDamage = calculateFinalDamage(
-      result,
-      action.critType,
-      part.vulnerable,
-      part.resistant
-    );
+      const finalDamage = calculateFinalDamage(
+        result,
+        action.critType,
+        part.vulnerable,
+        part.resistant
+      );
 
-    const type = result.type || 'Neutral';
-    totals[type] = (totals[type] || 0) + finalDamage;
-  });
+      const type = result.type || 'Neutral';
+      totals[type] = (totals[type] || 0) + finalDamage;
+    });
 
-  return totals;
-}, {});
+    return totals;
+  }, {});
 
   return (
-    <div style={{ padding: '2rem', fontFamily: 'sans-serif', maxWidth: '900px' }}>
-      <h1>D&amp;D Multi-Part Damage Calculator</h1>
-
-      {actions.map((action, actionIndex) => (
-        <ActionCard
-          key={actionIndex}
-          action={action}
-          actionIndex={actionIndex}
-          actionsLength={actions.length}
-          handleCritTypeChange={handleCritTypeChange}
-          addPart={addPart}
-          removeAction={removeAction}
-          handlePartChange={handlePartChange}
-          validateAndSetNumber={validateAndSetNumber}
-          removePart={removePart}
-          damageTypes={damageTypes}
-          diceTypes={diceTypes}
-        />
-      ))}
-
-      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
-        <button
-          onClick={addAction}
-          style={{
-            backgroundColor: '#2196F3',
-            color: 'white',
-            border: 'none',
-            padding: '0.5rem 1rem',
-            borderRadius: '4px'
-          }}
-        >
-          Add Attack Action
-        </button>
-
-        <button
-          onClick={resetAll}
-          style={{
-            backgroundColor: '#9E9E9E',
-            color: 'white',
-            border: 'none',
-            padding: '0.5rem 1rem',
-            borderRadius: '4px'
-          }}
-        >
-          Reset All
-        </button>
-      </div>
-
-      <button
-        onClick={handleCalculate}
+    <div
+      style={{
+        minHeight: '100vh',
+        backgroundColor: '#f3f4f6',
+        padding: '2rem 1rem 3rem',
+        fontFamily: 'sans-serif',
+      }}
+    >
+      <div
         style={{
-          backgroundColor: '#FF5722',
-          color: 'white',
-          border: 'none',
-          padding: '0.75rem 1.5rem',
-          borderRadius: '4px',
-          fontSize: '1.1rem',
-          fontWeight: 'bold'
+          maxWidth: '980px',
+          margin: '0 auto',
         }}
       >
-        🎲 Roll Damage
-      </button>
+        <div
+          style={{
+            marginBottom: '1.75rem',
+            padding: '1.5rem',
+            backgroundColor: '#111827',
+            color: 'white',
+            borderRadius: '18px',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.12)',
+          }}
+        >
+          <h1
+            style={{
+              margin: 0,
+              fontSize: '2rem',
+              fontWeight: '800',
+              lineHeight: 1.15,
+            }}
+          >
+            D&amp;D Multi-Part Damage Calculator
+          </h1>
+          <p
+            style={{
+              margin: '0.6rem 0 0 0',
+              color: '#d1d5db',
+              fontSize: '1rem',
+              lineHeight: 1.5,
+              maxWidth: '720px',
+            }}
+          >
+            Build attack actions, configure crit behavior, and calculate grouped damage totals with live breakdowns.
+          </p>
+        </div>
 
-      {results.length > 0 && (
-        <ResultsPanel
-          results={results}
-          actions={actions}
-          expandedBreakdowns={expandedBreakdowns}
-          toggleBreakdown={toggleBreakdown}
-          calculateFinalDamage={calculateFinalDamage}
-          getPreAdjustmentDamage={getPreAdjustmentDamage}
-          getColorByType={getColorByType}
-          liveGrandTotal={liveGrandTotal}
-          groupedDamageTotals={groupedDamageTotals}
-        />
-      )}
+        <div style={{ marginBottom: '1.25rem' }}>
+          {actions.map((action, actionIndex) => (
+            <ActionCard
+              key={actionIndex}
+              action={action}
+              actionIndex={actionIndex}
+              actionsLength={actions.length}
+              handleCritTypeChange={handleCritTypeChange}
+              addPart={addPart}
+              removeAction={removeAction}
+              handlePartChange={handlePartChange}
+              validateAndSetNumber={validateAndSetNumber}
+              removePart={removePart}
+              damageTypes={damageTypes}
+              diceTypes={diceTypes}
+            />
+          ))}
+        </div>
+
+        <div
+          style={{
+            display: 'flex',
+            gap: '0.75rem',
+            flexWrap: 'wrap',
+            marginBottom: '1rem',
+          }}
+        >
+          <button
+            onClick={addAction}
+            style={{
+              backgroundColor: '#2563eb',
+              color: 'white',
+              border: 'none',
+              padding: '0.75rem 1rem',
+              borderRadius: '10px',
+              fontWeight: '700',
+              fontSize: '0.95rem',
+              cursor: 'pointer',
+              boxShadow: '0 4px 12px rgba(37,99,235,0.18)',
+            }}
+          >
+            Add Attack Action
+          </button>
+
+          <button
+            onClick={resetAll}
+            style={{
+              backgroundColor: '#6b7280',
+              color: 'white',
+              border: 'none',
+              padding: '0.75rem 1rem',
+              borderRadius: '10px',
+              fontWeight: '700',
+              fontSize: '0.95rem',
+              cursor: 'pointer',
+            }}
+          >
+            Reset All
+          </button>
+        </div>
+
+        <div
+          style={{
+            marginBottom: results.length > 0 ? '1.5rem' : 0,
+          }}
+        >
+          <button
+            onClick={handleCalculate}
+            style={{
+              width: '100%',
+              background: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)',
+              color: 'white',
+              border: 'none',
+              padding: '1rem 1.25rem',
+              borderRadius: '14px',
+              fontSize: '1.1rem',
+              fontWeight: '800',
+              cursor: 'pointer',
+              boxShadow: '0 10px 24px rgba(234,88,12,0.22)',
+            }}
+          >
+            🎲 Roll Damage
+          </button>
+        </div>
+
+        {results.length > 0 && (
+          <ResultsPanel
+            results={results}
+            actions={actions}
+            expandedBreakdowns={expandedBreakdowns}
+            toggleBreakdown={toggleBreakdown}
+            calculateFinalDamage={calculateFinalDamage}
+            getPreAdjustmentDamage={getPreAdjustmentDamage}
+            getColorByType={getColorByType}
+            liveGrandTotal={liveGrandTotal}
+            groupedDamageTotals={groupedDamageTotals}
+          />
+        )}
+      </div>
     </div>
   );
 }

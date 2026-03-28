@@ -2,7 +2,13 @@ import * as React from "react";
 
 export function Switch({ checked, onCheckedChange }) {
   return (
-    <label style={{ display: "inline-flex", alignItems: "center", cursor: "pointer" }}>
+    <label
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        cursor: "pointer",
+      }}
+    >
       <input
         type="checkbox"
         checked={checked}
@@ -13,10 +19,10 @@ export function Switch({ checked, onCheckedChange }) {
         style={{
           width: "40px",
           height: "20px",
-          backgroundColor: checked ? "#dc2626" : "#ccc",
-          borderRadius: "20px",
+          backgroundColor: checked ? "#2563eb" : "#d1d5db",
+          borderRadius: "999px",
           position: "relative",
-          transition: "background-color 0.2s",
+          transition: "background-color 0.2s ease",
         }}
       >
         <span
@@ -28,7 +34,8 @@ export function Switch({ checked, onCheckedChange }) {
             height: "16px",
             backgroundColor: "#fff",
             borderRadius: "50%",
-            transition: "left 0.2s",
+            transition: "left 0.2s ease",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
           }}
         />
       </span>
