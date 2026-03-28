@@ -7,6 +7,7 @@ export default function ResultsPanel({
   getPreAdjustmentDamage,
   getColorByType,
   liveGrandTotal,
+  groupedDamageTotals,
 }) {
   if (results.length === 0) return null;
 
@@ -44,6 +45,10 @@ export default function ResultsPanel({
         return `${result.diceTotal} roll${modifierText}`;
     }
   };
+
+  const sortedGroupedTotals = Object.entries(groupedDamageTotals || {}).sort(
+    (a, b) => b[1] - a[1]
+  );
 
   return (
     <div style={{ marginTop: '2rem' }}>
@@ -165,6 +170,36 @@ export default function ResultsPanel({
           </div>
         );
       })}
+
+      {sortedGroupedTotals.length > 0 && (
+        <div
+          style={{
+            marginTop: '1.5rem',
+            padding: '1rem',
+            backgroundColor: '#f4f4f4',
+            borderRadius: '8px',
+          }}
+        >
+          <h3 style={{ margin: '0 0 0.75rem 0' }}>Damage by Type</h3>
+
+          {sortedGroupedTotals.map(([type, total]) => (
+            <div
+              key={type}
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '0.5rem',
+                color: getColorByType(type),
+                fontWeight: 'bold',
+              }}
+            >
+              <span>{type}</span>
+              <span>{total}</span>
+            </div>
+          ))}
+        </div>
+      )}
 
       <h2
         style={{

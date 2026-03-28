@@ -192,6 +192,27 @@ function App() {
       return sum + finalDamage;
     }, 0);
   }, 0);
+  const groupedDamageTotals = results.reduce((totals, group, actionIndex) => {
+  const action = actions[actionIndex];
+  if (!action) return totals;
+
+  group.forEach((result, partIndex) => {
+    const part = action.parts[partIndex];
+    if (!part) return;
+
+    const finalDamage = calculateFinalDamage(
+      result,
+      action.critType,
+      part.vulnerable,
+      part.resistant
+    );
+
+    const type = result.type || 'Neutral';
+    totals[type] = (totals[type] || 0) + finalDamage;
+  });
+
+  return totals;
+}, {});
 
   return (
     <div style={{ padding: '2rem', fontFamily: 'sans-serif', maxWidth: '900px' }}>
@@ -267,6 +288,7 @@ function App() {
           getPreAdjustmentDamage={getPreAdjustmentDamage}
           getColorByType={getColorByType}
           liveGrandTotal={liveGrandTotal}
+          groupedDamageTotals={groupedDamageTotals}
         />
       )}
     </div>
