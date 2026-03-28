@@ -1,22 +1,61 @@
+import { useState } from "react";
 import ActionCard from "./components/ActionCard";
 import ResultsPanel from "./components/ResultsPanel";
-import { useState } from 'react';
-import { calculateDamage } from './damageCalculator';
+import { calculateDamage } from "./damageCalculator";
 
 const defaultPart = {
-  name: '',
-  diceCount: '1',
-  diceType: 'd8',
-  modifier: '0',
+  name: "",
+  diceCount: "1",
+  diceType: "d8",
+  modifier: "0",
   vulnerable: false,
   resistant: false,
-  damageType: 'Neutral',
+  damageType: "Neutral",
 };
 
+function AppButton({
+  children,
+  onClick,
+  background,
+  shadowColor,
+  fullWidth = false,
+}) {
+  const [isHovered, setIsHovered] = useState(false);
+  const [isPressed, setIsPressed] = useState(false);
+
+  return (
+    <button
+      onClick={onClick}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => {
+        setIsHovered(false);
+        setIsPressed(false);
+      }}
+      onMouseDown={() => setIsPressed(true)}
+      onMouseUp={() => setIsPressed(false)}
+      style={{
+        width: fullWidth ? "100%" : "auto",
+        background,
+        color: "white",
+        border: "none",
+        padding: fullWidth ? "1rem 1.25rem" : "0.75rem 1rem",
+        borderRadius: fullWidth ? "14px" : "10px",
+        fontSize: fullWidth ? "1.1rem" : "0.95rem",
+        fontWeight: fullWidth ? "800" : "700",
+        cursor: "pointer",
+        boxShadow: isHovered ? `0 12px 24px ${shadowColor}` : `0 6px 14px ${shadowColor}`,
+        transform: isPressed ? "scale(0.99)" : isHovered ? "translateY(-1px)" : "translateY(0)",
+        transition: "transform 0.15s ease, box-shadow 0.2s ease, opacity 0.2s ease",
+        opacity: isHovered ? 0.98 : 1,
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
 function App() {
-  const [actions, setActions] = useState([
-    { critType: 'none', parts: [{ ...defaultPart }] }
-  ]);
+  const [actions, setActions] = useState([{ critType: "none", parts: [{ ...defaultPart }] }]);
   const [results, setResults] = useState([]);
   const [expandedBreakdowns, setExpandedBreakdowns] = useState(new Set());
 
@@ -32,13 +71,13 @@ function App() {
     const critRollTotal = result.critRoll?.total ?? 0;
 
     switch (critType) {
-      case 'max':
+      case "max":
         return diceTotal + maxDice + modifier;
-      case 'reroll':
+      case "reroll":
         return diceTotal + critRollTotal + modifier;
-      case 'double':
-        return (diceTotal * 2) + modifier;
-      case 'none':
+      case "double":
+        return diceTotal * 2 + modifier;
+      case "none":
       default:
         return diceTotal + modifier;
     }
@@ -59,7 +98,7 @@ function App() {
   };
 
   const resetAll = () => {
-    setActions([{ critType: 'none', parts: [{ ...defaultPart }] }]);
+    setActions([{ critType: "none", parts: [{ ...defaultPart }] }]);
     setResults([]);
     setExpandedBreakdowns(new Set());
   };
@@ -77,7 +116,7 @@ function App() {
   };
 
   const addAction = () => {
-    setActions([...actions, { critType: 'none', parts: [{ ...defaultPart }] }]);
+    setActions([...actions, { critType: "none", parts: [{ ...defaultPart }] }]);
     clearDerivedState();
   };
 
@@ -105,7 +144,7 @@ function App() {
     partIndex,
     field,
     value,
-    defaultValue = '0',
+    defaultValue = "0",
     minValue = null
   ) => {
     const parsed = parseInt(value, 10);
@@ -119,8 +158,8 @@ function App() {
       action.parts.map((part) => {
         const count = parseInt(part.diceCount, 10) || 1;
         const mod = parseInt(part.modifier, 10) || 0;
-        const type = part.diceType.replace(/^d/, '');
-        const diceNotation = `${count}d${type}${mod !== 0 ? (mod > 0 ? `+${mod}` : `${mod}`) : ''}`;
+        const type = part.diceType.replace(/^d/, "");
+        const diceNotation = `${count}d${type}${mod !== 0 ? (mod > 0 ? `+${mod}` : `${mod}`) : ""}`;
 
         return calculateDamage({
           attackName: part.name,
@@ -148,28 +187,28 @@ function App() {
 
   const getColorByType = (type) => {
     const map = {
-      Radiant: '#ccaa00',
-      Fire: '#ee5500',
-      Cold: '#3399cc',
-      Force: '#cc3333',
-      Lightning: '#3366cc',
-      Necrotic: '#40b050',
-      Poison: '#44bb00',
-      Psychic: '#cc77aa',
-      Thunder: '#8844bb',
-      Slashing: '#8c8c8c',
-      Piercing: '#8c8c8c',
-      Bludgeoning: '#8c8c8c',
-      Neutral: '#444',
+      Radiant: "#ccaa00",
+      Fire: "#ee5500",
+      Cold: "#3399cc",
+      Force: "#cc3333",
+      Lightning: "#3366cc",
+      Necrotic: "#40b050",
+      Poison: "#44bb00",
+      Psychic: "#cc77aa",
+      Thunder: "#8844bb",
+      Slashing: "#8c8c8c",
+      Piercing: "#8c8c8c",
+      Bludgeoning: "#8c8c8c",
+      Neutral: "#444",
     };
-    return map[type] || '#666';
+    return map[type] || "#666";
   };
 
   const damageTypes = [
     "Neutral", "Slashing", "Piercing", "Bludgeoning",
     "Fire", "Cold", "Lightning", "Thunder",
     "Acid", "Poison", "Necrotic", "Radiant",
-    "Psychic", "Force"
+    "Psychic", "Force",
   ];
 
   const diceTypes = ["d4", "d6", "d8", "d10", "d12", "d20", "d100"];
@@ -178,7 +217,6 @@ function App() {
     return totalSum + group.reduce((sum, result, partIndex) => {
       const action = actions[actionIndex];
       if (!action) return sum;
-
       const part = action.parts[partIndex];
       if (!part) return sum;
 
@@ -208,7 +246,7 @@ function App() {
         part.resistant
       );
 
-      const type = result.type || 'Neutral';
+      const type = result.type || "Neutral";
       totals[type] = (totals[type] || 0) + finalDamage;
     });
 
@@ -218,33 +256,33 @@ function App() {
   return (
     <div
       style={{
-        minHeight: '100vh',
-        backgroundColor: '#f3f4f6',
-        padding: '2rem 1rem 3rem',
-        fontFamily: 'sans-serif',
+        minHeight: "100vh",
+        background: "linear-gradient(180deg, #f8fafc 0%, #f3f4f6 100%)",
+        padding: "2rem 1rem 3rem",
+        fontFamily: "sans-serif",
       }}
     >
       <div
         style={{
-          maxWidth: '980px',
-          margin: '0 auto',
+          maxWidth: "980px",
+          margin: "0 auto",
         }}
       >
         <div
           style={{
-            marginBottom: '1.75rem',
-            padding: '1.5rem',
-            backgroundColor: '#111827',
-            color: 'white',
-            borderRadius: '18px',
-            boxShadow: '0 10px 30px rgba(0,0,0,0.12)',
+            marginBottom: "1.75rem",
+            padding: "1.5rem",
+            background: "linear-gradient(135deg, #111827 0%, #1f2937 100%)",
+            color: "white",
+            borderRadius: "18px",
+            boxShadow: "0 10px 30px rgba(0,0,0,0.12)",
           }}
         >
           <h1
             style={{
               margin: 0,
-              fontSize: '2rem',
-              fontWeight: '800',
+              fontSize: "2rem",
+              fontWeight: "800",
               lineHeight: 1.15,
             }}
           >
@@ -252,18 +290,18 @@ function App() {
           </h1>
           <p
             style={{
-              margin: '0.6rem 0 0 0',
-              color: '#d1d5db',
-              fontSize: '1rem',
+              margin: "0.6rem 0 0 0",
+              color: "#d1d5db",
+              fontSize: "1rem",
               lineHeight: 1.5,
-              maxWidth: '720px',
+              maxWidth: "720px",
             }}
           >
             Build attack actions, configure crit behavior, and calculate grouped damage totals with live breakdowns.
           </p>
         </div>
 
-        <div style={{ marginBottom: '1.25rem' }}>
+        <div style={{ marginBottom: "1.25rem" }}>
           {actions.map((action, actionIndex) => (
             <ActionCard
               key={actionIndex}
@@ -284,68 +322,38 @@ function App() {
 
         <div
           style={{
-            display: 'flex',
-            gap: '0.75rem',
-            flexWrap: 'wrap',
-            marginBottom: '1rem',
+            display: "flex",
+            gap: "0.75rem",
+            flexWrap: "wrap",
+            marginBottom: "1rem",
           }}
         >
-          <button
+          <AppButton
             onClick={addAction}
-            style={{
-              backgroundColor: '#2563eb',
-              color: 'white',
-              border: 'none',
-              padding: '0.75rem 1rem',
-              borderRadius: '10px',
-              fontWeight: '700',
-              fontSize: '0.95rem',
-              cursor: 'pointer',
-              boxShadow: '0 4px 12px rgba(37,99,235,0.18)',
-            }}
+            background="#2563eb"
+            shadowColor="rgba(37,99,235,0.22)"
           >
             Add Attack Action
-          </button>
+          </AppButton>
 
-          <button
+          <AppButton
             onClick={resetAll}
-            style={{
-              backgroundColor: '#6b7280',
-              color: 'white',
-              border: 'none',
-              padding: '0.75rem 1rem',
-              borderRadius: '10px',
-              fontWeight: '700',
-              fontSize: '0.95rem',
-              cursor: 'pointer',
-            }}
+            background="#6b7280"
+            shadowColor="rgba(107,114,128,0.2)"
           >
             Reset All
-          </button>
+          </AppButton>
         </div>
 
-        <div
-          style={{
-            marginBottom: results.length > 0 ? '1.5rem' : 0,
-          }}
-        >
-          <button
+        <div style={{ marginBottom: results.length > 0 ? "1.5rem" : 0 }}>
+          <AppButton
             onClick={handleCalculate}
-            style={{
-              width: '100%',
-              background: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)',
-              color: 'white',
-              border: 'none',
-              padding: '1rem 1.25rem',
-              borderRadius: '14px',
-              fontSize: '1.1rem',
-              fontWeight: '800',
-              cursor: 'pointer',
-              boxShadow: '0 10px 24px rgba(234,88,12,0.22)',
-            }}
+            background="linear-gradient(135deg, #f97316 0%, #ea580c 100%)"
+            shadowColor="rgba(234,88,12,0.24)"
+            fullWidth
           >
             🎲 Roll Damage
-          </button>
+          </AppButton>
         </div>
 
         {results.length > 0 && (
