@@ -258,8 +258,7 @@ function App() {
       style={{
         minHeight: "100vh",
         background: "linear-gradient(180deg, #f8fafc 0%, #f3f4f6 100%)",
-        padding: "2rem 1rem 3rem",
-        fontFamily: "sans-serif",
+        padding: "2rem 1rem 3rem",        
       }}
     >
       <div
