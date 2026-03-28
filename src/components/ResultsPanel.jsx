@@ -4,10 +4,46 @@ export default function ResultsPanel({
   expandedBreakdowns,
   toggleBreakdown,
   calculateFinalDamage,
+  getPreAdjustmentDamage,
   getColorByType,
   liveGrandTotal,
 }) {
   if (results.length === 0) return null;
+
+  const formatModifier = (modifier) => {
+    if (modifier === 0) return '';
+    return ` ${modifier > 0 ? '+' : '-'} ${Math.abs(modifier)}`;
+  };
+
+  const getCritModeLabel = (critType) => {
+    switch (critType) {
+      case 'max':
+        return 'Max + Roll';
+      case 'reroll':
+        return 'Roll + Roll';
+      case 'double':
+        return 'Double Roll';
+      case 'none':
+      default:
+        return 'Off';
+    }
+  };
+
+  const getCritSummary = (result, critType) => {
+    const modifierText = formatModifier(result.modifier ?? 0);
+
+    switch (critType) {
+      case 'max':
+        return `${result.diceTotal} roll + ${result.maxDice} max${modifierText}`;
+      case 'reroll':
+        return `${result.diceTotal} roll + ${result.critRoll?.total ?? 0} crit roll${modifierText}`;
+      case 'double':
+        return `${result.diceTotal} roll × 2${modifierText}`;
+      case 'none':
+      default:
+        return `${result.diceTotal} roll${modifierText}`;
+    }
+  };
 
   return (
     <div style={{ marginTop: '2rem' }}>
@@ -23,7 +59,7 @@ export default function ResultsPanel({
 
           return sum + calculateFinalDamage(
             result,
-            action.isCrit,
+            action.critType,
             part.vulnerable,
             part.resistant
           );
@@ -43,6 +79,10 @@ export default function ResultsPanel({
               Attack Action {actionIndex + 1} Total: {actionTotal}
             </h3>
 
+            <div style={{ marginBottom: '0.75rem', color: '#555', fontSize: '0.95rem' }}>
+              Crit Mode: <strong>{getCritModeLabel(action.critType)}</strong>
+            </div>
+
             {group.map((result, partIndex) => {
               const key = `${actionIndex}-${partIndex}`;
               const isExpanded = expandedBreakdowns.has(key);
@@ -51,20 +91,22 @@ export default function ResultsPanel({
 
               const finalDamage = calculateFinalDamage(
                 result,
-                action.isCrit,
+                action.critType,
                 part.vulnerable,
                 part.resistant
               );
+
+              const preAdjustmentDamage = getPreAdjustmentDamage(result, action.critType);
 
               return (
                 <div
                   key={partIndex}
                   style={{ color: getColorByType(result.type), marginBottom: '0.75rem' }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
                     <strong>{result.type}</strong> – {finalDamage}
                     <span style={{ color: '#666', fontSize: '0.9rem' }}>
-                      ({result.base} base + {action.isCrit ? result.critBonus : 0} crit)
+                      ({getCritSummary(result, action.critType)})
                     </span>
                     <button
                       onClick={() => toggleBreakdown(actionIndex, partIndex)}
@@ -93,11 +135,25 @@ export default function ResultsPanel({
                       }}
                     >
                       <div>
-                        ▸ Rolled: {result.breakdown.count}d{result.breakdown.sides} = [{result.breakdown.rolled.join(', ')}]
-                        {result.breakdown.modifier !== 0 &&
-                          ` ${result.breakdown.modifier > 0 ? '+' : '-'} ${Math.abs(result.breakdown.modifier)}`}
+                        ▸ Base Roll: {result.breakdown.count}d{result.breakdown.sides} = [{result.breakdown.baseRolled.join(', ')}]
+                        {formatModifier(result.modifier ?? 0)}
                       </div>
-                      <div>▸ Crit Bonus: {result.critBonus}</div>
+
+                      {action.critType === 'max' && (
+                        <div>▸ Crit Bonus (Max Dice): {result.maxDice}</div>
+                      )}
+
+                      {action.critType === 'reroll' && (
+                        <div>
+                          ▸ Crit Roll: {result.breakdown.count}d{result.breakdown.sides} = [{result.breakdown.critRolled.join(', ')}]
+                        </div>
+                      )}
+
+                      {action.critType === 'double' && (
+                        <div>▸ Doubled Dice Total: {result.diceTotal} × 2 = {result.diceTotal * 2}</div>
+                      )}
+
+                      <div>▸ Pre-Adjustment Damage: {preAdjustmentDamage}</div>
                       <div>▸ Vulnerable: {part.vulnerable ? 'Yes' : 'No'}</div>
                       <div>▸ Resistant: {part.resistant ? 'Yes' : 'No'}</div>
                       <div><strong>▸ Final Damage: {finalDamage}</strong></div>

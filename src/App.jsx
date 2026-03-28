@@ -14,31 +14,52 @@ const defaultPart = {
 };
 
 function App() {
-  const [actions, setActions] = useState([{ isCrit: false, parts: [{ ...defaultPart }] }]);
+  const [actions, setActions] = useState([
+    { critType: 'none', parts: [{ ...defaultPart }] }
+  ]);
   const [results, setResults] = useState([]);
   const [expandedBreakdowns, setExpandedBreakdowns] = useState(new Set());
-  const clearDerivedState = () => {
-  setResults([]);
-  setExpandedBreakdowns(new Set());
-};
 
-  // Helper function to calculate final damage with all modifiers
-  const calculateFinalDamage = (result, isCrit, vulnerable, resistant) => {
-    let adjusted = result.base + (isCrit ? result.critBonus : 0);
-    
+  const clearDerivedState = () => {
+    setResults([]);
+    setExpandedBreakdowns(new Set());
+  };
+
+  const getPreAdjustmentDamage = (result, critType) => {
+    const diceTotal = result.diceTotal ?? 0;
+    const modifier = result.modifier ?? 0;
+    const maxDice = result.maxDice ?? 0;
+    const critRollTotal = result.critRoll?.total ?? 0;
+
+    switch (critType) {
+      case 'max':
+        return diceTotal + maxDice + modifier;
+      case 'reroll':
+        return diceTotal + critRollTotal + modifier;
+      case 'double':
+        return (diceTotal * 2) + modifier;
+      case 'none':
+      default:
+        return diceTotal + modifier;
+    }
+  };
+
+  const calculateFinalDamage = (result, critType, vulnerable, resistant) => {
+    let adjusted = getPreAdjustmentDamage(result, critType);
+
     if (vulnerable && resistant) {
-      // Vulnerable and resistant cancel each other out
+      // cancel each other out
     } else if (vulnerable) {
       adjusted *= 2;
     } else if (resistant) {
       adjusted /= 2;
     }
-    
+
     return Math.floor(adjusted);
   };
 
   const resetAll = () => {
-    setActions([{ isCrit: false, parts: [{ ...defaultPart }] }]);
+    setActions([{ critType: 'none', parts: [{ ...defaultPart }] }]);
     setResults([]);
     setExpandedBreakdowns(new Set());
   };
@@ -49,37 +70,44 @@ function App() {
     setActions(updated);
   };
 
-  const toggleCrit = (actionIndex) => {
+  const handleCritTypeChange = (actionIndex, value) => {
     const updated = [...actions];
-    updated[actionIndex].isCrit = !updated[actionIndex].isCrit;
+    updated[actionIndex].critType = value;
     setActions(updated);
   };
 
   const addAction = () => {
-  setActions([...actions, { isCrit: false, parts: [{ ...defaultPart }] }]);
-  clearDerivedState();
-};
+    setActions([...actions, { critType: 'none', parts: [{ ...defaultPart }] }]);
+    clearDerivedState();
+  };
 
   const removeAction = (index) => {
-  setActions(actions.filter((_, i) => i !== index));
-  clearDerivedState();
-};
+    setActions(actions.filter((_, i) => i !== index));
+    clearDerivedState();
+  };
 
   const addPart = (actionIndex) => {
-  const updated = [...actions];
-  updated[actionIndex].parts.push({ ...defaultPart });
-  setActions(updated);
-  clearDerivedState();
-};
+    const updated = [...actions];
+    updated[actionIndex].parts.push({ ...defaultPart });
+    setActions(updated);
+    clearDerivedState();
+  };
 
   const removePart = (actionIndex, partIndex) => {
-  const updated = [...actions];
-  updated[actionIndex].parts.splice(partIndex, 1);
-  setActions(updated);
-  clearDerivedState();
-};
+    const updated = [...actions];
+    updated[actionIndex].parts.splice(partIndex, 1);
+    setActions(updated);
+    clearDerivedState();
+  };
 
-  const validateAndSetNumber = (actionIndex, partIndex, field, value, defaultValue = '0', minValue = null) => {
+  const validateAndSetNumber = (
+    actionIndex,
+    partIndex,
+    field,
+    value,
+    defaultValue = '0',
+    minValue = null
+  ) => {
     const parsed = parseInt(value, 10);
     if (isNaN(parsed) || (minValue !== null && parsed < minValue)) {
       handlePartChange(actionIndex, partIndex, field, defaultValue);
@@ -101,17 +129,20 @@ function App() {
         });
       })
     );
+
     setResults(allResults);
   };
 
   const toggleBreakdown = (actionIndex, partIndex) => {
     const key = `${actionIndex}-${partIndex}`;
     const updated = new Set(expandedBreakdowns);
+
     if (updated.has(key)) {
       updated.delete(key);
     } else {
       updated.add(key);
     }
+
     setExpandedBreakdowns(updated);
   };
 
@@ -135,85 +166,109 @@ function App() {
   };
 
   const damageTypes = [
-    "Neutral", "Slashing", "Piercing", "Bludgeoning", 
-    "Fire", "Cold", "Lightning", "Thunder", 
-    "Acid", "Poison", "Necrotic", "Radiant", 
+    "Neutral", "Slashing", "Piercing", "Bludgeoning",
+    "Fire", "Cold", "Lightning", "Thunder",
+    "Acid", "Poison", "Necrotic", "Radiant",
     "Psychic", "Force"
   ];
 
   const diceTypes = ["d4", "d6", "d8", "d10", "d12", "d20", "d100"];
 
-  // Calculate live grand total using the helper function
   const liveGrandTotal = results.reduce((totalSum, group, actionIndex) => {
-  return totalSum + group.reduce((sum, result, partIndex) => {
-    const action = actions[actionIndex];
-    if (!action) return sum;
-    const part = action.parts[partIndex];
-    if (!part) return sum;
-    const finalDamage = calculateFinalDamage(
-      result,
-      action.isCrit,
-      part.vulnerable,
-      part.resistant
-    );
-    return sum + finalDamage;
+    return totalSum + group.reduce((sum, result, partIndex) => {
+      const action = actions[actionIndex];
+      if (!action) return sum;
+
+      const part = action.parts[partIndex];
+      if (!part) return sum;
+
+      const finalDamage = calculateFinalDamage(
+        result,
+        action.critType,
+        part.vulnerable,
+        part.resistant
+      );
+
+      return sum + finalDamage;
+    }, 0);
   }, 0);
-}, 0);
 
   return (
     <div style={{ padding: '2rem', fontFamily: 'sans-serif', maxWidth: '900px' }}>
-      <h1>D&D Multi-Part Damage Calculator</h1>
+      <h1>D&amp;D Multi-Part Damage Calculator</h1>
 
       {actions.map((action, actionIndex) => (
-  <ActionCard
-    key={actionIndex}
-    action={action}
-    actionIndex={actionIndex}
-    actionsLength={actions.length}
-    toggleCrit={toggleCrit}
-    addPart={addPart}
-    removeAction={removeAction}
-    handlePartChange={handlePartChange}
-    validateAndSetNumber={validateAndSetNumber}
-    removePart={removePart}
-    damageTypes={damageTypes}
-    diceTypes={diceTypes}
-  />
-))}
+        <ActionCard
+          key={actionIndex}
+          action={action}
+          actionIndex={actionIndex}
+          actionsLength={actions.length}
+          handleCritTypeChange={handleCritTypeChange}
+          addPart={addPart}
+          removeAction={removeAction}
+          handlePartChange={handlePartChange}
+          validateAndSetNumber={validateAndSetNumber}
+          removePart={removePart}
+          damageTypes={damageTypes}
+          diceTypes={diceTypes}
+        />
+      ))}
 
       <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
-        <button 
+        <button
           onClick={addAction}
-          style={{ backgroundColor: '#2196F3', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '4px' }}
+          style={{
+            backgroundColor: '#2196F3',
+            color: 'white',
+            border: 'none',
+            padding: '0.5rem 1rem',
+            borderRadius: '4px'
+          }}
         >
           Add Attack Action
         </button>
-        <button 
+
+        <button
           onClick={resetAll}
-          style={{ backgroundColor: '#9E9E9E', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '4px' }}
+          style={{
+            backgroundColor: '#9E9E9E',
+            color: 'white',
+            border: 'none',
+            padding: '0.5rem 1rem',
+            borderRadius: '4px'
+          }}
         >
           Reset All
         </button>
       </div>
 
-      <button 
+      <button
         onClick={handleCalculate}
-        style={{ backgroundColor: '#FF5722', color: 'white', border: 'none', padding: '0.75rem 1.5rem', borderRadius: '4px', fontSize: '1.1rem', fontWeight: 'bold' }}
+        style={{
+          backgroundColor: '#FF5722',
+          color: 'white',
+          border: 'none',
+          padding: '0.75rem 1.5rem',
+          borderRadius: '4px',
+          fontSize: '1.1rem',
+          fontWeight: 'bold'
+        }}
       >
         🎲 Roll Damage
       </button>
 
- {results.length > 0 && (
-  <ResultsPanel
-    results={results}
-    actions={actions}
-    expandedBreakdowns={expandedBreakdowns}
-    toggleBreakdown={toggleBreakdown}
-    calculateFinalDamage={calculateFinalDamage}
-    getColorByType={getColorByType}
-    liveGrandTotal={liveGrandTotal}
-  />
-)}
+      {results.length > 0 && (
+        <ResultsPanel
+          results={results}
+          actions={actions}
+          expandedBreakdowns={expandedBreakdowns}
+          toggleBreakdown={toggleBreakdown}
+          calculateFinalDamage={calculateFinalDamage}
+          getPreAdjustmentDamage={getPreAdjustmentDamage}
+          getColorByType={getColorByType}
+          liveGrandTotal={liveGrandTotal}
+        />
+      )}
     </div>
   );
 }

@@ -3,20 +3,28 @@ import { rollDice, parseDiceNotation, extractDamageType } from './utils';
 export function calculateDamage({ attackName, diceNotation, type }) {
   const { count, sides, modifier } = parseDiceNotation(diceNotation);
 
-  const baseRoll = count > 0 ? rollDice(sides, count) : { total: 0, rollsArray: [] };
-  const baseTotal = baseRoll.total + modifier;
-  const critBonus = count > 0 ? count * sides : 0;
+  const baseRoll =
+    count > 0 ? rollDice(sides, count) : { total: 0, rollsArray: [] };
+
+  // Store a second roll up front so "Roll + Roll" can update dynamically
+  // after the initial calculation without rerolling later.
+  const critRoll =
+    count > 0 ? rollDice(sides, count) : { total: 0, rollsArray: [] };
+
+  const maxDice = count > 0 ? count * sides : 0;
 
   return {
     type: type || extractDamageType(attackName),
-    base: baseTotal,
-    critBonus,
+    diceTotal: baseRoll.total,
+    modifier,
+    maxDice,
+    critRoll,
     breakdown: {
-      rolled: baseRoll.rollsArray,
-      modifier,
+      baseRolled: baseRoll.rollsArray,
+      critRolled: critRoll.rollsArray,
       sides,
       count,
-      notation: diceNotation
-    }
+      notation: diceNotation,
+    },
   };
 }

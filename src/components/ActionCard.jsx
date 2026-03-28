@@ -1,11 +1,10 @@
-import { Switch } from "./ui/switch";
 import DamagePartEditor from "./DamagePartEditor";
 
 export default function ActionCard({
   action,
   actionIndex,
   actionsLength,
-  toggleCrit,
+  handleCritTypeChange,
   addPart,
   removeAction,
   handlePartChange,
@@ -27,16 +26,24 @@ export default function ActionCard({
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
+          gap: '1rem',
+          flexWrap: 'wrap',
         }}
       >
         <span>Attack Action {actionIndex + 1}</span>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <Switch
-            checked={action.isCrit}
-            onCheckedChange={() => toggleCrit(actionIndex)}
-          />
-          <span>{action.isCrit ? "Crit On" : "Crit Off"}</span>
-        </div>
+
+        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <span>Crit:</span>
+          <select
+            value={action.critType}
+            onChange={(e) => handleCritTypeChange(actionIndex, e.target.value)}
+          >
+            <option value="none">Off</option>
+            <option value="max">Max + Roll</option>
+            <option value="reroll">Roll + Roll</option>
+            <option value="double">Double Roll</option>
+          </select>
+        </label>
       </h3>
 
       {action.parts.map((part, partIndex) => (
