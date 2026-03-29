@@ -1,6 +1,7 @@
 import { useState } from "react";
 import ActionCard from "./components/ActionCard";
 import ResultsPanel from "./components/ResultsPanel";
+import RollHistoryPanel from "./components/RollHistoryPanel";
 import { calculateDamage } from "./damageCalculator";
 
 const defaultPart = {
@@ -58,11 +59,15 @@ function App() {
   const [actions, setActions] = useState([{ critType: "none", parts: [{ ...defaultPart }] }]);
   const [results, setResults] = useState([]);
   const [expandedBreakdowns, setExpandedBreakdowns] = useState(new Set());
+  const [rollHistory, setRollHistory] = useState([]);
+  const [expandedHistory, setExpandedHistory] = useState(new Set());
 
   const clearDerivedState = () => {
     setResults([]);
     setExpandedBreakdowns(new Set());
   };
+
+  const deepClone = (value) => JSON.parse(JSON.stringify(value));
 
   const getPreAdjustmentDamage = (result, critType) => {
     const diceTotal = result.diceTotal ?? 0;
@@ -95,6 +100,66 @@ function App() {
     }
 
     return Math.floor(adjusted);
+  };
+
+  const calculateGrandTotalFromSnapshot = (resultsSnapshot, actionsSnapshot) => {
+    return resultsSnapshot.reduce((totalSum, group, actionIndex) => {
+      return totalSum + group.reduce((sum, result, partIndex) => {
+        const action = actionsSnapshot[actionIndex];
+        if (!action) return sum;
+
+        const part = action.parts[partIndex];
+        if (!part) return sum;
+
+        const finalDamage = calculateFinalDamage(
+          result,
+          action.critType,
+          part.vulnerable,
+          part.resistant
+        );
+
+        return sum + finalDamage;
+      }, 0);
+    }, 0);
+  };
+
+  const calculateGroupedDamageTotalsFromSnapshot = (resultsSnapshot, actionsSnapshot) => {
+    return resultsSnapshot.reduce((totals, group, actionIndex) => {
+      const action = actionsSnapshot[actionIndex];
+      if (!action) return totals;
+
+      group.forEach((result, partIndex) => {
+        const part = action.parts[partIndex];
+        if (!part) return;
+
+        const finalDamage = calculateFinalDamage(
+          result,
+          action.critType,
+          part.vulnerable,
+          part.resistant
+        );
+
+        const type = result.type || "Neutral";
+        totals[type] = (totals[type] || 0) + finalDamage;
+      });
+
+      return totals;
+    }, {});
+  };
+
+  const buildHistorySnapshot = (allResults) => {
+    const actionsSnapshot = deepClone(actions);
+    const resultsSnapshot = deepClone(allResults);
+
+    return {
+      id: Date.now() + Math.random(),
+      rollNumber: rollHistory.length + 1,
+      rolledAt: new Date().toISOString(),
+      actionsSnapshot,
+      resultsSnapshot,
+      grandTotal: calculateGrandTotalFromSnapshot(resultsSnapshot, actionsSnapshot),
+      groupedDamageTotals: calculateGroupedDamageTotalsFromSnapshot(resultsSnapshot, actionsSnapshot),
+    };
   };
 
   const resetAll = () => {
@@ -170,6 +235,9 @@ function App() {
     );
 
     setResults(allResults);
+
+    const snapshot = buildHistorySnapshot(allResults);
+    setRollHistory((prev) => [snapshot, ...prev].slice(0, 10));
   };
 
   const toggleBreakdown = (actionIndex, partIndex) => {
@@ -183,6 +251,18 @@ function App() {
     }
 
     setExpandedBreakdowns(updated);
+  };
+
+  const toggleHistoryItem = (historyId) => {
+    const updated = new Set(expandedHistory);
+
+    if (updated.has(historyId)) {
+      updated.delete(historyId);
+    } else {
+      updated.add(historyId);
+    }
+
+    setExpandedHistory(updated);
   };
 
   const getColorByType = (type) => {
@@ -202,6 +282,11 @@ function App() {
       Neutral: "#444",
     };
     return map[type] || "#666";
+  };
+
+  const clearHistory = () => {
+    setRollHistory([]);
+    setExpandedHistory(new Set());
   };
 
   const damageTypes = [
@@ -258,7 +343,7 @@ function App() {
       style={{
         minHeight: "100vh",
         background: "linear-gradient(180deg, #f8fafc 0%, #f3f4f6 100%)",
-        padding: "2rem 1rem 3rem",        
+        padding: "2rem 1rem 3rem",
       }}
     >
       <div
@@ -368,6 +453,15 @@ function App() {
             groupedDamageTotals={groupedDamageTotals}
           />
         )}
+
+          <RollHistoryPanel
+            rollHistory={rollHistory}
+            expandedHistory={expandedHistory}
+            toggleHistoryItem={toggleHistoryItem}
+            calculateFinalDamage={calculateFinalDamage}
+            getColorByType={getColorByType}
+            clearHistory={clearHistory}
+          />
       </div>
     </div>
   );
