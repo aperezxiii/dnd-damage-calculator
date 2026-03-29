@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import ActionCard from "./components/ActionCard";
 import ResultsPanel from "./components/ResultsPanel";
 import RollHistoryPanel from "./components/RollHistoryPanel";
@@ -61,6 +61,7 @@ function App() {
   const [expandedBreakdowns, setExpandedBreakdowns] = useState(new Set());
   const [rollHistory, setRollHistory] = useState([]);
   const [expandedHistory, setExpandedHistory] = useState(new Set());
+  const resultsRef = useRef(null);
 
   const clearDerivedState = () => {
     setResults([]);
@@ -235,6 +236,13 @@ function App() {
     );
 
     setResults(allResults);
+
+    setTimeout(() => {
+      resultsRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }, 0);
 
     const snapshot = buildHistorySnapshot(allResults);
     setRollHistory((prev) => [snapshot, ...prev].slice(0, 10));
@@ -441,27 +449,29 @@ function App() {
         </div>
 
         {results.length > 0 && (
-          <ResultsPanel
-            results={results}
-            actions={actions}
-            expandedBreakdowns={expandedBreakdowns}
-            toggleBreakdown={toggleBreakdown}
-            calculateFinalDamage={calculateFinalDamage}
-            getPreAdjustmentDamage={getPreAdjustmentDamage}
-            getColorByType={getColorByType}
-            liveGrandTotal={liveGrandTotal}
-            groupedDamageTotals={groupedDamageTotals}
-          />
+          <div ref={resultsRef}>
+            <ResultsPanel
+              results={results}
+              actions={actions}
+              expandedBreakdowns={expandedBreakdowns}
+              toggleBreakdown={toggleBreakdown}
+              calculateFinalDamage={calculateFinalDamage}
+              getPreAdjustmentDamage={getPreAdjustmentDamage}
+              getColorByType={getColorByType}
+              liveGrandTotal={liveGrandTotal}
+              groupedDamageTotals={groupedDamageTotals}
+            />
+          </div>
         )}
 
-          <RollHistoryPanel
-            rollHistory={rollHistory}
-            expandedHistory={expandedHistory}
-            toggleHistoryItem={toggleHistoryItem}
-            calculateFinalDamage={calculateFinalDamage}
-            getColorByType={getColorByType}
-            clearHistory={clearHistory}
-          />
+        <RollHistoryPanel
+          rollHistory={rollHistory}
+          expandedHistory={expandedHistory}
+          toggleHistoryItem={toggleHistoryItem}
+          calculateFinalDamage={calculateFinalDamage}
+          getColorByType={getColorByType}
+          clearHistory={clearHistory}
+        />
       </div>
     </div>
   );
