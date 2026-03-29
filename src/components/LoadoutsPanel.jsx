@@ -6,20 +6,22 @@ function PanelButton({
   backgroundColor,
   textColor = "white",
   border = "none",
+  disabled = false,
 }) {
   const [isHovered, setIsHovered] = useState(false);
   const [isPressed, setIsPressed] = useState(false);
 
   return (
     <button
-      onClick={onClick}
-      onMouseEnter={() => setIsHovered(true)}
+      onClick={disabled ? undefined : onClick}
+      onMouseEnter={() => !disabled && setIsHovered(true)}
       onMouseLeave={() => {
         setIsHovered(false);
         setIsPressed(false);
       }}
-      onMouseDown={() => setIsPressed(true)}
+      onMouseDown={() => !disabled && setIsPressed(true)}
       onMouseUp={() => setIsPressed(false)}
+      disabled={disabled}
       style={{
         backgroundColor,
         color: textColor,
@@ -28,11 +30,17 @@ function PanelButton({
         borderRadius: "10px",
         fontWeight: "700",
         fontSize: "0.92rem",
-        cursor: "pointer",
+        cursor: disabled ? "not-allowed" : "pointer",
         transition: "transform 0.15s ease, box-shadow 0.2s ease, opacity 0.2s ease",
-        transform: isPressed ? "scale(0.98)" : isHovered ? "translateY(-1px)" : "translateY(0)",
-        boxShadow: isHovered ? "0 8px 18px rgba(0,0,0,0.08)" : "none",
-        opacity: isHovered ? 0.97 : 1,
+        transform: disabled
+          ? "translateY(0)"
+          : isPressed
+          ? "scale(0.98)"
+          : isHovered
+          ? "translateY(-1px)"
+          : "translateY(0)",
+        boxShadow: !disabled && isHovered ? "0 8px 18px rgba(0,0,0,0.08)" : "none",
+        opacity: disabled ? 0.5 : isHovered ? 0.97 : 1,
       }}
     >
       {children}
@@ -56,13 +64,180 @@ function getLoadoutSummary(loadout) {
   return `${actionCount} action${actionCount !== 1 ? "s" : ""} • ${partCount} part${partCount !== 1 ? "s" : ""}`;
 }
 
+function LoadoutRow({
+  loadout,
+  loadLoadout,
+  addLoadoutAsNewAction,
+  addLoadoutToAction,
+  deleteLoadout,
+  actions,
+}) {
+  const [showTargetSelector, setShowTargetSelector] = useState(false);
+
+  const hasExistingActions = actions.length > 0;
+  const isSingleActionLoadout = (loadout.actionsSnapshot?.length || 0) === 1;
+  const canAddToAction = hasExistingActions && isSingleActionLoadout;
+
+  const handleTargetClick = (actionIndex) => {
+    addLoadoutToAction(loadout.id, actionIndex);
+    setShowTargetSelector(false);
+  };
+
+  return (
+    <div
+      style={{
+        padding: "0.95rem 1rem",
+        backgroundColor: "#f9fafb",
+        border: "1px solid #f3f4f6",
+        borderRadius: "12px",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "flex-start",
+          gap: "1rem",
+          flexWrap: "wrap",
+        }}
+      >
+        <div style={{ flex: "1 1 320px" }}>
+          <div
+            style={{
+              fontSize: "1rem",
+              fontWeight: "700",
+              color: "#111827",
+              marginBottom: "0.3rem",
+            }}
+          >
+            {loadout.name}
+          </div>
+
+          <div
+            style={{
+              fontSize: "0.9rem",
+              color: "#6b7280",
+              marginBottom: "0.25rem",
+            }}
+          >
+            {getLoadoutSummary(loadout)}
+          </div>
+
+          <div
+            style={{
+              fontSize: "0.84rem",
+              color: "#9ca3af",
+              marginBottom: canAddToAction ? 0 : "0.25rem",
+            }}
+          >
+            Updated: {formatTimestamp(loadout.updatedAt)}
+          </div>
+
+          {!isSingleActionLoadout && (
+            <div
+              style={{
+                fontSize: "0.82rem",
+                color: "#9ca3af",
+                marginTop: "0.25rem",
+              }}
+            >
+              Add to Action is available for single-action loadouts only.
+            </div>
+          )}
+        </div>
+
+        <div
+          style={{
+            display: "flex",
+            gap: "0.6rem",
+            flexWrap: "wrap",
+          }}
+        >
+          <PanelButton onClick={() => loadLoadout(loadout.id)} backgroundColor="#16a34a">
+            Load
+          </PanelButton>
+
+          <PanelButton onClick={() => addLoadoutAsNewAction(loadout.id)} backgroundColor="#2563eb">
+            + New Action
+          </PanelButton>
+
+          <PanelButton
+            onClick={() => setShowTargetSelector((prev) => !prev)}
+            backgroundColor="#ffffff"
+            textColor="#111827"
+            border="1px solid #d1d5db"
+            disabled={!canAddToAction}
+          >
+            Add to Action
+          </PanelButton>
+
+          <PanelButton
+            onClick={() => deleteLoadout(loadout.id)}
+            backgroundColor="#ffffff"
+            textColor="#dc2626"
+            border="1px solid #fecaca"
+          >
+            Delete
+          </PanelButton>
+        </div>
+      </div>
+
+      {showTargetSelector && canAddToAction && (
+        <div
+          style={{
+            marginTop: "0.85rem",
+            paddingTop: "0.85rem",
+            borderTop: "1px solid #e5e7eb",
+          }}
+        >
+          <div
+            style={{
+              fontSize: "0.82rem",
+              fontWeight: "700",
+              color: "#6b7280",
+              textTransform: "uppercase",
+              letterSpacing: "0.03em",
+              marginBottom: "0.6rem",
+            }}
+          >
+            Select target action
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              gap: "0.5rem",
+              flexWrap: "wrap",
+            }}
+          >
+            {actions.map((_, actionIndex) => (
+              <PanelButton
+                key={actionIndex}
+                onClick={() => handleTargetClick(actionIndex)}
+                backgroundColor="#ffffff"
+                textColor="#111827"
+                border="1px solid #d1d5db"
+              >
+                Action {actionIndex + 1}
+              </PanelButton>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function LoadoutsPanel({
   loadoutName,
   setLoadoutName,
   loadouts,
   saveLoadout,
   loadLoadout,
+  addLoadoutAsNewAction,
+  addLoadoutToAction,
   deleteLoadout,
+  actions,
 }) {
   return (
     <div
@@ -94,7 +269,7 @@ export default function LoadoutsPanel({
             lineHeight: 1.5,
           }}
         >
-          Save your current attack setup and reload it later.
+          Save your attack setup as a reusable neutral template, then replace, append, or add it as a new action.
         </p>
       </div>
 
@@ -146,78 +321,15 @@ export default function LoadoutsPanel({
       ) : (
         <div style={{ display: "grid", gap: "0.8rem" }}>
           {loadouts.map((loadout) => (
-            <div
+            <LoadoutRow
               key={loadout.id}
-              style={{
-                padding: "0.95rem 1rem",
-                backgroundColor: "#f9fafb",
-                border: "1px solid #f3f4f6",
-                borderRadius: "12px",
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "flex-start",
-                  gap: "1rem",
-                  flexWrap: "wrap",
-                }}
-              >
-                <div style={{ flex: "1 1 320px" }}>
-                  <div
-                    style={{
-                      fontSize: "1rem",
-                      fontWeight: "700",
-                      color: "#111827",
-                      marginBottom: "0.3rem",
-                    }}
-                  >
-                    {loadout.name}
-                  </div>
-
-                  <div
-                    style={{
-                      fontSize: "0.9rem",
-                      color: "#6b7280",
-                      marginBottom: "0.25rem",
-                    }}
-                  >
-                    {getLoadoutSummary(loadout)}
-                  </div>
-
-                  <div
-                    style={{
-                      fontSize: "0.84rem",
-                      color: "#9ca3af",
-                    }}
-                  >
-                    Updated: {formatTimestamp(loadout.updatedAt)}
-                  </div>
-                </div>
-
-                <div
-                  style={{
-                    display: "flex",
-                    gap: "0.6rem",
-                    flexWrap: "wrap",
-                  }}
-                >
-                  <PanelButton onClick={() => loadLoadout(loadout.id)} backgroundColor="#16a34a">
-                    Load
-                  </PanelButton>
-
-                  <PanelButton
-                    onClick={() => deleteLoadout(loadout.id)}
-                    backgroundColor="#ffffff"
-                    textColor="#dc2626"
-                    border="1px solid #fecaca"
-                  >
-                    Delete
-                  </PanelButton>
-                </div>
-              </div>
-            </div>
+              loadout={loadout}
+              loadLoadout={loadLoadout}
+              addLoadoutAsNewAction={addLoadoutAsNewAction}
+              addLoadoutToAction={addLoadoutToAction}
+              deleteLoadout={deleteLoadout}
+              actions={actions}
+            />
           ))}
         </div>
       )}

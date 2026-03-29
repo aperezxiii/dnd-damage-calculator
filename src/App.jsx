@@ -100,6 +100,18 @@ function App() {
     return `${Date.now()}-${Math.random()}`;
   };
 
+  const sanitizePartForLoadout = (part) => ({
+    ...deepClone(part),
+    vulnerable: false,
+    resistant: false,
+  });
+
+  const sanitizeActionForLoadout = (action) => ({
+    ...deepClone(action),
+    critType: "none",
+    parts: (action.parts || []).map(sanitizePartForLoadout),
+  });
+
   useEffect(() => {
     try {
       localStorage.setItem(LOADOUTS_STORAGE_KEY, JSON.stringify(loadouts));
@@ -117,7 +129,7 @@ function App() {
       createdAt: existingLoadout?.createdAt || now,
       updatedAt: now,
       version: 1,
-      actionsSnapshot: deepClone(actions),
+      actionsSnapshot: actions.map(sanitizeActionForLoadout),
     };
   };
 
@@ -148,6 +160,40 @@ function App() {
     setActions(deepClone(selected.actionsSnapshot || [defaultAction()]));
     clearDerivedState();
     setLoadoutName(selected.name || "");
+  };
+
+  const addLoadoutAsNewAction = (loadoutId) => {
+    const selected = loadouts.find((loadout) => loadout.id === loadoutId);
+    if (!selected) return;
+
+    const sanitizedActions = (selected.actionsSnapshot || []).map(sanitizeActionForLoadout);
+    if (sanitizedActions.length === 0) return;
+
+    setActions((prev) => [...prev, ...sanitizedActions]);
+    clearDerivedState();
+  };
+
+  const addLoadoutToAction = (loadoutId, targetActionIndex) => {
+    const selected = loadouts.find((loadout) => loadout.id === loadoutId);
+    if (!selected) return;
+
+    const sourceActions = selected.actionsSnapshot || [];
+    if (sourceActions.length !== 1) return;
+
+    const sourceAction = sourceActions[0];
+    const partsToAppend = (sourceAction.parts || []).map(sanitizePartForLoadout);
+
+    if (partsToAppend.length === 0) return;
+
+    setActions((prev) => {
+      if (!prev[targetActionIndex]) return prev;
+
+      const updated = deepClone(prev);
+      updated[targetActionIndex].parts.push(...partsToAppend);
+      return updated;
+    });
+
+    clearDerivedState();
   };
 
   const deleteLoadout = (loadoutId) => {
@@ -483,7 +529,10 @@ function App() {
           loadouts={loadouts}
           saveLoadout={saveLoadout}
           loadLoadout={loadLoadout}
+          addLoadoutAsNewAction={addLoadoutAsNewAction}
+          addLoadoutToAction={addLoadoutToAction}
           deleteLoadout={deleteLoadout}
+          actions={actions}
         />
 
         <div style={{ marginBottom: "1.25rem" }}>
