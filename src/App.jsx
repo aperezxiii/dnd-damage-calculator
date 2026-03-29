@@ -1,5 +1,6 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import ActionCard from "./components/ActionCard";
+import LoadoutsPanel from "./components/LoadoutsPanel";
 import ResultsPanel from "./components/ResultsPanel";
 import RollHistoryPanel from "./components/RollHistoryPanel";
 import { calculateDamage } from "./damageCalculator";
@@ -13,6 +14,13 @@ const defaultPart = {
   resistant: false,
   damageType: "Neutral",
 };
+
+const defaultAction = () => ({
+  critType: "none",
+  parts: [{ ...defaultPart }],
+});
+
+const LOADOUTS_STORAGE_KEY = "dnd-damage-calculator-loadouts";
 
 function AppButton({
   children,
@@ -56,11 +64,24 @@ function AppButton({
 }
 
 function App() {
-  const [actions, setActions] = useState([{ critType: "none", parts: [{ ...defaultPart }] }]);
+  const [actions, setActions] = useState([defaultAction()]);
   const [results, setResults] = useState([]);
   const [expandedBreakdowns, setExpandedBreakdowns] = useState(new Set());
   const [rollHistory, setRollHistory] = useState([]);
   const [expandedHistory, setExpandedHistory] = useState(new Set());
+  const [loadouts, setLoadouts] = useState(() => {
+    try {
+      const raw = localStorage.getItem(LOADOUTS_STORAGE_KEY);
+      if (!raw) return [];
+
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (error) {
+      console.error("Failed to read loadouts from localStorage:", error);
+      return [];
+    }
+  });
+  const [loadoutName, setLoadoutName] = useState("");
   const resultsRef = useRef(null);
 
   const clearDerivedState = () => {
@@ -69,6 +90,69 @@ function App() {
   };
 
   const deepClone = (value) => JSON.parse(JSON.stringify(value));
+
+  const normalizeLoadoutName = (name) => name.trim();
+
+  const createLoadoutId = () => {
+    if (typeof crypto !== "undefined" && crypto.randomUUID) {
+      return crypto.randomUUID();
+    }
+    return `${Date.now()}-${Math.random()}`;
+  };
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(LOADOUTS_STORAGE_KEY, JSON.stringify(loadouts));
+    } catch (error) {
+      console.error("Failed to write loadouts to localStorage:", error);
+    }
+  }, [loadouts]);
+
+  const buildLoadoutSnapshot = (name, existingLoadout = null) => {
+    const now = new Date().toISOString();
+
+    return {
+      id: existingLoadout?.id || createLoadoutId(),
+      name,
+      createdAt: existingLoadout?.createdAt || now,
+      updatedAt: now,
+      version: 1,
+      actionsSnapshot: deepClone(actions),
+    };
+  };
+
+  const saveLoadout = () => {
+    const trimmedName = normalizeLoadoutName(loadoutName);
+    if (!trimmedName) return;
+
+    setLoadouts((prev) => {
+      const existing = prev.find((loadout) => loadout.name === trimmedName);
+      const nextLoadout = buildLoadoutSnapshot(trimmedName, existing || null);
+
+      if (existing) {
+        return prev.map((loadout) =>
+          loadout.id === existing.id ? nextLoadout : loadout
+        );
+      }
+
+      return [nextLoadout, ...prev];
+    });
+
+    setLoadoutName(trimmedName);
+  };
+
+  const loadLoadout = (loadoutId) => {
+    const selected = loadouts.find((loadout) => loadout.id === loadoutId);
+    if (!selected) return;
+
+    setActions(deepClone(selected.actionsSnapshot || [defaultAction()]));
+    clearDerivedState();
+    setLoadoutName(selected.name || "");
+  };
+
+  const deleteLoadout = (loadoutId) => {
+    setLoadouts((prev) => prev.filter((loadout) => loadout.id !== loadoutId));
+  };
 
   const getPreAdjustmentDamage = (result, critType) => {
     const diceTotal = result.diceTotal ?? 0;
@@ -164,9 +248,8 @@ function App() {
   };
 
   const resetAll = () => {
-    setActions([{ critType: "none", parts: [{ ...defaultPart }] }]);
-    setResults([]);
-    setExpandedBreakdowns(new Set());
+    setActions([defaultAction()]);
+    clearDerivedState();
   };
 
   const handlePartChange = (actionIndex, partIndex, field, value) => {
@@ -182,7 +265,7 @@ function App() {
   };
 
   const addAction = () => {
-    setActions([...actions, { critType: "none", parts: [{ ...defaultPart }] }]);
+    setActions([...actions, defaultAction()]);
     clearDerivedState();
   };
 
@@ -310,6 +393,7 @@ function App() {
     return totalSum + group.reduce((sum, result, partIndex) => {
       const action = actions[actionIndex];
       if (!action) return sum;
+
       const part = action.parts[partIndex];
       if (!part) return sum;
 
@@ -392,6 +476,15 @@ function App() {
             Build attack actions, configure crit behavior, and calculate grouped damage totals with live breakdowns.
           </p>
         </div>
+
+        <LoadoutsPanel
+          loadoutName={loadoutName}
+          setLoadoutName={setLoadoutName}
+          loadouts={loadouts}
+          saveLoadout={saveLoadout}
+          loadLoadout={loadLoadout}
+          deleteLoadout={deleteLoadout}
+        />
 
         <div style={{ marginBottom: "1.25rem" }}>
           {actions.map((action, actionIndex) => (
