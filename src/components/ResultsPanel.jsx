@@ -26,7 +26,7 @@ function BreakdownButton({ isExpanded, onClick }) {
         transition: "transform 0.15s ease, box-shadow 0.2s ease, background-color 0.2s ease",
         transform: isPressed ? "scale(0.98)" : isHovered ? "translateY(-1px)" : "translateY(0)",
         boxShadow: isHovered ? "0 6px 14px rgba(0,0,0,0.08)" : "none",
-        background: isHovered ? "#f9fafb" : "#ffffff",
+        backgroundColor: isHovered ? "#f9fafb" : "#ffffff",
       }}
     >
       {isExpanded ? "Hide Breakdown" : "Show Breakdown"}
@@ -330,6 +330,17 @@ export default function ResultsPanel({
                         }}
                       >
                         <div style={{ flex: "1 1 420px" }}>
+                          <div
+                            style={{
+                              fontSize: "0.88rem",
+                              fontWeight: "700",
+                              color: "#374151",
+                              marginBottom: "0.35rem",
+                            }}
+                          >
+                            {part.name?.trim() || `Unlabeled Damage ${partIndex + 1}`}
+                          </div>
+
                           <div
                             style={{
                               display: "flex",

@@ -196,6 +196,7 @@ export default function RollHistoryPanel({
                     style={{
                       display: "flex",
                       alignItems: "center",
+                      justifyContent: "space-between",
                       gap: "1rem",
                       flexWrap: "wrap",
                       marginBottom: "0.4rem",
@@ -210,15 +211,35 @@ export default function RollHistoryPanel({
                       Roll #{entry.rollNumber}
                     </strong>
 
-                    <span
+                    <div
                       style={{
-                        fontSize: "1.05rem",
-                        fontWeight: "800",
-                        color: "#15803d",
+                        padding: "0.5rem 0.75rem",
+                        backgroundColor: "#f3f4f6",
+                        borderRadius: "10px",
+                        textAlign: "center",
+                        minWidth: "90px",
                       }}
                     >
-                      Total: {entry.grandTotal}
-                    </span>
+                      <div
+                        style={{
+                          fontSize: "0.7rem",
+                          fontWeight: "700",
+                          color: "#6b7280",
+                          letterSpacing: "0.03em",
+                        }}
+                      >
+                        TOTAL
+                      </div>
+                      <div
+                        style={{
+                          fontSize: "1.1rem",
+                          fontWeight: "800",
+                          color: "#111827",
+                        }}
+                      >
+                        {entry.grandTotal}                    
+                      </div>
+                    </div>
                   </div>
 
                   <div
@@ -387,7 +408,7 @@ export default function RollHistoryPanel({
                                         color: "#4b5563",
                                       }}
                                     >
-                                      {part.name?.trim() || `Damage Part ${partIndex + 1}`}{" "}
+                                      {part.name?.trim() || `Unlabeled Damage ${partIndex + 1}`}{" "}
                                       <span
                                         style={{
                                           color: getColorByType(result.type),
