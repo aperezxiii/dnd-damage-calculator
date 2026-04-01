@@ -82,6 +82,8 @@ function App() {
     }
   });
   const [loadoutName, setLoadoutName] = useState("");
+  const [activeTab, setActiveTab] = useState("builder");
+  const [loadoutMessage, setLoadoutMessage] = useState("");
   const resultsRef = useRef(null);
 
   const clearDerivedState = () => {
@@ -120,6 +122,14 @@ function App() {
     }
   }, [loadouts]);
 
+  useEffect(() => {
+    if (!loadoutMessage) return;
+    const timeoutId = setTimeout(() => {
+      setLoadoutMessage("");
+    }, 2500);
+    return () => clearTimeout(timeoutId);
+  }, [loadoutMessage]);
+
   const buildLoadoutSnapshot = (name, existingLoadout = null) => {
     const now = new Date().toISOString();
 
@@ -151,6 +161,7 @@ function App() {
     });
 
     setLoadoutName(trimmedName);
+    setLoadoutMessage(`Saved "${trimmedName}"`);
   };
 
   const loadLoadout = (loadoutId) => {
@@ -160,6 +171,7 @@ function App() {
     setActions(deepClone(selected.actionsSnapshot || [defaultAction()]));
     clearDerivedState();
     setLoadoutName(selected.name || "");
+    setLoadoutMessage(`Loaded "${selected.name}" into Builder`);
   };
 
   const addLoadoutAsNewAction = (loadoutId) => {
@@ -171,6 +183,7 @@ function App() {
 
     setActions((prev) => [...prev, ...sanitizedActions]);
     clearDerivedState();
+    setLoadoutMessage(`Added "${selected.name}" as a new action`);
   };
 
   const addLoadoutToAction = (loadoutId, targetActionIndex) => {
@@ -194,10 +207,17 @@ function App() {
     });
 
     clearDerivedState();
+    setLoadoutMessage(`Added "${selected.name}" to Action ${targetActionIndex + 1}`);
   };
 
   const deleteLoadout = (loadoutId) => {
+    const selected = loadouts.find((loadout) => loadout.id === loadoutId);
+
     setLoadouts((prev) => prev.filter((loadout) => loadout.id !== loadoutId));
+
+    if (selected) {
+      setLoadoutMessage(`Deleted "${selected.name}"`);
+    }
   };
 
   const getPreAdjustmentDamage = (result, critType) => {
@@ -365,6 +385,7 @@ function App() {
     );
 
     setResults(allResults);
+    setActiveTab("results");
 
     setTimeout(() => {
       resultsRef.current?.scrollIntoView({
@@ -523,18 +544,48 @@ function App() {
           </p>
         </div>
 
-        <LoadoutsPanel
-          loadoutName={loadoutName}
-          setLoadoutName={setLoadoutName}
-          loadouts={loadouts}
-          saveLoadout={saveLoadout}
-          loadLoadout={loadLoadout}
-          addLoadoutAsNewAction={addLoadoutAsNewAction}
-          addLoadoutToAction={addLoadoutToAction}
-          deleteLoadout={deleteLoadout}
-          actions={actions}
-        />
+        <div
+          style={{
+            display: "flex",
+            gap: "0.5rem",
+            marginBottom: "1.5rem",
+            borderBottom: "1px solid #e5e7eb",
+            paddingBottom: "0.5rem",
+            overflowX: "auto",
+          }}
+        >
+          {[
+            { key: "builder", label: "Builder" },
+            { key: "results", label: "Results" },
+            { key: "history", label: "History" },
+            { key: "loadouts", label: "Loadouts" },
+          ].map((tab) => {
+            const isActive = activeTab === tab.key;
 
+            return (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                style={{
+                  padding: "0.6rem 1rem",
+                  borderRadius: "999px",
+                  border: "none",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
+                  backgroundColor: isActive ? "#111827" : "#f3f4f6",
+                  color: isActive ? "#ffffff" : "#374151",
+                  transition: "all 0.2s ease",
+                }}
+              >
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+
+    {activeTab === "builder" && (
+      <>
         <div style={{ marginBottom: "1.25rem" }}>
           {actions.map((action, actionIndex) => (
             <ActionCard
@@ -586,34 +637,73 @@ function App() {
             shadowColor="rgba(234,88,12,0.24)"
             fullWidth
           >
-            🎲 Roll Damage
+            {results.length > 0 ? "🎲 Roll Again" : "🎲 Roll Damage"}
           </AppButton>
         </div>
+      </>
+    )}
 
-        {results.length > 0 && (
-          <div ref={resultsRef}>
-            <ResultsPanel
-              results={results}
-              actions={actions}
-              expandedBreakdowns={expandedBreakdowns}
-              toggleBreakdown={toggleBreakdown}
-              calculateFinalDamage={calculateFinalDamage}
-              getPreAdjustmentDamage={getPreAdjustmentDamage}
-              getColorByType={getColorByType}
-              liveGrandTotal={liveGrandTotal}
-              groupedDamageTotals={groupedDamageTotals}
-            />
+        {activeTab === "results" && (
+          <div>
+            {results.length === 0 ? (
+              <div
+                style={{
+                  marginTop: "2rem",
+                  padding: "2rem",
+                  backgroundColor: "#ffffff",
+                  border: "1px solid #e5e7eb",
+                  borderRadius: "16px",
+                  boxShadow: "0 4px 14px rgba(0,0,0,0.04)",
+                  textAlign: "center",
+                  color: "#6b7280",
+                  fontSize: "1rem",
+                }}
+              >
+                No results yet — roll damage to see results.
+              </div>
+            ) : (
+              <div ref={resultsRef}>
+                <ResultsPanel
+                  results={results}
+                  actions={actions}
+                  expandedBreakdowns={expandedBreakdowns}
+                  toggleBreakdown={toggleBreakdown}
+                  calculateFinalDamage={calculateFinalDamage}
+                  getPreAdjustmentDamage={getPreAdjustmentDamage}
+                  getColorByType={getColorByType}
+                  liveGrandTotal={liveGrandTotal}
+                  groupedDamageTotals={groupedDamageTotals}
+                />
+              </div>
+            )}
           </div>
         )}
 
-        <RollHistoryPanel
-          rollHistory={rollHistory}
-          expandedHistory={expandedHistory}
-          toggleHistoryItem={toggleHistoryItem}
-          calculateFinalDamage={calculateFinalDamage}
-          getColorByType={getColorByType}
-          clearHistory={clearHistory}
-        />
+        {activeTab === "history" && (
+          <RollHistoryPanel
+            rollHistory={rollHistory}
+            expandedHistory={expandedHistory}
+            toggleHistoryItem={toggleHistoryItem}
+            calculateFinalDamage={calculateFinalDamage}
+            getColorByType={getColorByType}
+            clearHistory={clearHistory}
+          />
+        )}
+
+        {activeTab === "loadouts" && (
+          <LoadoutsPanel
+            loadoutName={loadoutName}
+            setLoadoutName={setLoadoutName}
+            loadoutMessage={loadoutMessage}
+            loadouts={loadouts}
+            saveLoadout={saveLoadout}
+            loadLoadout={loadLoadout}
+            addLoadoutAsNewAction={addLoadoutAsNewAction}
+            addLoadoutToAction={addLoadoutToAction}
+            deleteLoadout={deleteLoadout}
+            actions={actions}
+          />
+        )}
       </div>
     </div>
   );

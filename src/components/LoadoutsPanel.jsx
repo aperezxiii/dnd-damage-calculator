@@ -271,6 +271,7 @@ function LoadoutRow({
 export default function LoadoutsPanel({
   loadoutName,
   setLoadoutName,
+  loadoutMessage,
   loadouts,
   saveLoadout,
   loadLoadout,
@@ -312,6 +313,23 @@ export default function LoadoutsPanel({
           Save your attack setup as a reusable neutral template, then replace, append, or add it as a new action.
         </p>
       </div>
+
+      {loadoutMessage && (
+        <div
+          style={{
+            marginBottom: "1rem",
+            padding: "0.85rem 1rem",
+            backgroundColor: "#ecfdf5",
+            border: "1px solid #a7f3d0",
+            borderRadius: "12px",
+            color: "#065f46",
+            fontSize: "0.94rem",
+            fontWeight: "600",
+          }}
+        >
+          {loadoutMessage}
+        </div>
+      )}
 
       <div
         style={{
