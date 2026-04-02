@@ -63,6 +63,60 @@ function AppButton({
   );
 }
 
+function TabButton({ label, isActive, onClick }) {
+  const [isHovered, setIsHovered] = useState(false);
+  const [isPressed, setIsPressed] = useState(false);
+
+  return (
+    <button
+      onClick={onClick}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => {
+        setIsHovered(false);
+        setIsPressed(false);
+      }}
+      onMouseDown={() => setIsPressed(true)}
+      onMouseUp={() => setIsPressed(false)}
+      style={{
+        padding: "0.6rem 1rem",
+        borderRadius: "999px",
+        border: "none",
+        fontWeight: "700",
+        fontSize: "0.95rem",
+        cursor: "pointer",
+        whiteSpace: "nowrap",
+
+        backgroundColor: isActive
+          ? "#111827"
+          : isHovered
+          ? "#e5e7eb"
+          : "#f3f4f6",
+
+        color: isActive ? "#ffffff" : "#374151",
+
+        transform: isPressed
+          ? "scale(0.98)"
+          : isHovered
+          ? "translateY(-1px)"
+          : "translateY(0)",
+
+        boxShadow: isActive
+          ? "0 6px 16px rgba(0,0,0,0.12)"
+          : isHovered
+          ? "0 8px 18px rgba(0,0,0,0.08)"
+          : "none",
+
+        outline: isActive ? "2px solid rgba(17,24,39,0.15)" : "none",
+
+        transition: "all 0.18s ease",
+      }}
+    >
+      {label}
+    </button>
+  );
+}
+
+
 function App() {
   const [actions, setActions] = useState([defaultAction()]);
   const [results, setResults] = useState([]);
@@ -84,6 +138,7 @@ function App() {
   const [loadoutName, setLoadoutName] = useState("");
   const [activeTab, setActiveTab] = useState("builder");
   const [loadoutMessage, setLoadoutMessage] = useState("");
+  const [showBuilderCTA, setShowBuilderCTA] = useState(false);
   const resultsRef = useRef(null);
 
   const clearDerivedState = () => {
@@ -162,6 +217,7 @@ function App() {
 
     setLoadoutName(trimmedName);
     setLoadoutMessage(`Saved "${trimmedName}"`);
+    setShowBuilderCTA(false);
   };
 
   const loadLoadout = (loadoutId) => {
@@ -172,6 +228,7 @@ function App() {
     clearDerivedState();
     setLoadoutName(selected.name || "");
     setLoadoutMessage(`Loaded "${selected.name}" into Builder`);
+    setShowBuilderCTA(true);
   };
 
   const addLoadoutAsNewAction = (loadoutId) => {
@@ -184,6 +241,7 @@ function App() {
     setActions((prev) => [...prev, ...sanitizedActions]);
     clearDerivedState();
     setLoadoutMessage(`Added "${selected.name}" as a new action`);
+    setShowBuilderCTA(true);
   };
 
   const addLoadoutToAction = (loadoutId, targetActionIndex) => {
@@ -208,6 +266,7 @@ function App() {
 
     clearDerivedState();
     setLoadoutMessage(`Added "${selected.name}" to Action ${targetActionIndex + 1}`);
+    setShowBuilderCTA(true);
   };
 
   const deleteLoadout = (loadoutId) => {
@@ -217,6 +276,7 @@ function App() {
 
     if (selected) {
       setLoadoutMessage(`Deleted "${selected.name}"`);
+      setShowBuilderCTA(false);
     }
   };
 
@@ -386,14 +446,7 @@ function App() {
 
     setResults(allResults);
     setActiveTab("results");
-
-    setTimeout(() => {
-      resultsRef.current?.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
-    }, 0);
-
+   
     const snapshot = buildHistorySnapshot(allResults);
     setRollHistory((prev) => [snapshot, ...prev].slice(0, 10));
   };
@@ -563,23 +616,12 @@ function App() {
             const isActive = activeTab === tab.key;
 
             return (
-              <button
+              <TabButton
                 key={tab.key}
+                label={tab.label}
+                isActive={isActive}
                 onClick={() => setActiveTab(tab.key)}
-                style={{
-                  padding: "0.6rem 1rem",
-                  borderRadius: "999px",
-                  border: "none",
-                  fontWeight: "600",
-                  cursor: "pointer",
-                  whiteSpace: "nowrap",
-                  backgroundColor: isActive ? "#111827" : "#f3f4f6",
-                  color: isActive ? "#ffffff" : "#374151",
-                  transition: "all 0.2s ease",
-                }}
-              >
-                {tab.label}
-              </button>
+              />
             );
           })}
         </div>
@@ -695,6 +737,8 @@ function App() {
             loadoutName={loadoutName}
             setLoadoutName={setLoadoutName}
             loadoutMessage={loadoutMessage}
+            showBuilderCTA={showBuilderCTA}
+            goToBuilder={() => setActiveTab("builder")}
             loadouts={loadouts}
             saveLoadout={saveLoadout}
             loadLoadout={loadLoadout}

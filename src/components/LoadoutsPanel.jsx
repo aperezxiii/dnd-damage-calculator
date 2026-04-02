@@ -272,6 +272,8 @@ export default function LoadoutsPanel({
   loadoutName,
   setLoadoutName,
   loadoutMessage,
+  showBuilderCTA,
+  goToBuilder,
   loadouts,
   saveLoadout,
   loadLoadout,
@@ -310,7 +312,7 @@ export default function LoadoutsPanel({
             lineHeight: 1.5,
           }}
         >
-          Save your attack setup as a reusable neutral template, then replace, append, or add it as a new action.
+          Save your attack setup as a reusable neutral template, then use Load, + New Action, or Add to Action to apply it.
         </p>
       </div>
 
@@ -325,9 +327,26 @@ export default function LoadoutsPanel({
             color: "#065f46",
             fontSize: "0.94rem",
             fontWeight: "600",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: "0.75rem",
+            flexWrap: "wrap",
           }}
         >
-          {loadoutMessage}
+          <span>{loadoutMessage}</span>
+
+          {showBuilderCTA && (
+            <PanelButton
+              onClick={goToBuilder}
+              backgroundColor="#ffffff"
+              textColor="#065f46"
+              border="1px solid #a7f3d0"
+              style={{ padding: "0.5rem 0.8rem" }}
+            >
+              Go to Builder
+            </PanelButton>
+          )}
         </div>
       )}
 
