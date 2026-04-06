@@ -1,38 +1,5 @@
 import { useState } from "react";
-
-function BreakdownButton({ isExpanded, onClick }) {
-  const [isHovered, setIsHovered] = useState(false);
-  const [isPressed, setIsPressed] = useState(false);
-
-  return (
-    <button
-      onClick={onClick}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => {
-        setIsHovered(false);
-        setIsPressed(false);
-      }}
-      onMouseDown={() => setIsPressed(true)}
-      onMouseUp={() => setIsPressed(false)}
-      style={{
-        fontSize: "0.85rem",
-        fontWeight: "600",
-        padding: "0.5rem 0.75rem",
-        borderRadius: "8px",
-        border: "1px solid #d1d5db",
-        backgroundColor: "#ffffff",
-        color: "#111827",
-        cursor: "pointer",
-        transition: "transform 0.15s ease, box-shadow 0.2s ease, background-color 0.2s ease",
-        transform: isPressed ? "scale(0.98)" : isHovered ? "translateY(-1px)" : "translateY(0)",
-        boxShadow: isHovered ? "0 6px 14px rgba(0,0,0,0.08)" : "none",
-        backgroundColor: isHovered ? "#f9fafb" : "#ffffff",
-      }}
-    >
-      {isExpanded ? "Hide Breakdown" : "Show Breakdown"}
-    </button>
-  );
-}
+import Button from "./ui/Button";
 
 export default function ResultsPanel({
   results,
@@ -380,10 +347,13 @@ export default function ResultsPanel({
                           </div>
                         </div>
 
-                        <BreakdownButton
-                          isExpanded={isExpanded}
+                        <Button
                           onClick={() => toggleBreakdown(actionIndex, partIndex)}
-                        />
+                          variant="secondary"
+                          size="sm"
+                        >
+                          {isExpanded ? "Hide Breakdown" : "Show Breakdown"}
+                        </Button>
                       </div>
 
                       {isExpanded && (

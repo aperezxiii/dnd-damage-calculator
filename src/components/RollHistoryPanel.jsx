@@ -1,71 +1,4 @@
-import { useState } from "react";
-
-function HistoryToggleButton({ isExpanded, onClick }) {
-  const [isHovered, setIsHovered] = useState(false);
-  const [isPressed, setIsPressed] = useState(false);
-
-  return (
-    <button
-      onClick={onClick}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => {
-        setIsHovered(false);
-        setIsPressed(false);
-      }}
-      onMouseDown={() => setIsPressed(true)}
-      onMouseUp={() => setIsPressed(false)}
-      style={{
-        fontSize: "0.85rem",
-        fontWeight: "600",
-        padding: "0.5rem 0.75rem",
-        borderRadius: "8px",
-        border: "1px solid #d1d5db",        
-        color: "#111827",
-        cursor: "pointer",
-        transition: "transform 0.15s ease, box-shadow 0.2s ease, background-color 0.2s ease",
-        transform: isPressed ? "scale(0.98)" : isHovered ? "translateY(-1px)" : "translateY(0)",
-        boxShadow: isHovered ? "0 6px 14px rgba(0,0,0,0.08)" : "none",
-        backgroundColor: isHovered ? "#f9fafb" : "#ffffff",
-      }}
-    >
-      {isExpanded ? "Hide Snapshot" : "View Snapshot"}
-    </button>
-  );
-}
-
-function ClearHistoryButton({ onClick }) {
-  const [isHovered, setIsHovered] = useState(false);
-  const [isPressed, setIsPressed] = useState(false);
-
-  return (
-    <button
-      onClick={onClick}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => {
-        setIsHovered(false);
-        setIsPressed(false);
-      }}
-      onMouseDown={() => setIsPressed(true)}
-      onMouseUp={() => setIsPressed(false)}
-      style={{
-        fontSize: "0.85rem",
-        fontWeight: "700",
-        padding: "0.55rem 0.8rem",
-        borderRadius: "8px",
-        border: "1px solid #fecaca",
-        backgroundColor: "#f9fafb",
-        color: "#ef4444",
-        cursor: "pointer",
-        transition: "transform 0.15s ease, box-shadow 0.2s ease, opacity 0.2s ease",
-        transform: isPressed ? "scale(0.98)" : isHovered ? "translateY(-1px)" : "translateY(0)",
-        boxShadow: isHovered ? "0 6px 14px rgba(0,0,0,0.08)" : "none",
-        opacity: isHovered ? 0.96 : 1,
-      }}
-    >
-      Clear History
-    </button>
-  );
-}
+import Button from "./ui/Button";
 
 function getCritModeLabel(critType) {
   switch (critType) {
@@ -125,46 +58,70 @@ export default function RollHistoryPanel({
   getColorByType,
   clearHistory,
 }) {
-  if (rollHistory.length === 0) return null;
+  
+    return (
+      <div style={{ marginTop: "2rem" }}>
+        <div
+          style={{
+            marginBottom: "1rem",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            gap: "1rem",
+            flexWrap: "wrap",
+          }}
+        >
+          <div>
+            <h2
+              style={{
+                margin: 0,
+                fontSize: "1.5rem",
+                fontWeight: "700",
+                color: "#111827",
+              }}
+            >
+              Roll History
+            </h2>
+            <p
+              style={{
+                margin: "0.35rem 0 0 0",
+                fontSize: "0.95rem",
+                color: "#6b7280",
+              }}
+            >
+              Previous rolls are stored as snapshots and won’t change when current settings are edited.
+            </p>
+          </div>
 
-  return (
-    <div style={{ marginTop: "2rem" }}>
-      <div
-        style={{
-          marginBottom: "1rem",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-          gap: "1rem",
-          flexWrap: "wrap",
-        }}
-      >
-        <div>
-          <h2
-            style={{
-              margin: 0,
-              fontSize: "1.5rem",
-              fontWeight: "700",
-              color: "#111827",
-            }}
-          >
-            Roll History
-          </h2>
-          <p
-            style={{
-              margin: "0.35rem 0 0 0",
-              fontSize: "0.95rem",
-              color: "#6b7280",
-            }}
-          >
-            Previous rolls are stored as snapshots and won’t change when current settings are edited.
-          </p>
+          {rollHistory.length > 0 && (
+            <Button
+              onClick={clearHistory}
+              variant="secondary"
+              size="sm"
+              style={{ color: "#ef4444", border: "1px solid #fecaca" }}
+            >
+              Clear History
+            </Button>
+          )}
         </div>
 
-        <ClearHistoryButton onClick={clearHistory} />
-      </div>
-
-      <div style={{ display: "grid", gap: "0.9rem" }}>
+        {rollHistory.length === 0 ? (
+          <div
+            style={{
+              padding: "1.75rem",
+              backgroundColor: "#f9fafb",
+              border: "1px dashed #d1d5db",
+              borderRadius: "14px",
+              color: "#6b7280",
+              fontSize: "0.95rem",
+              lineHeight: 1.5,
+              textAlign: "center",
+            }}
+          >
+            No roll history yet. Your recent damage snapshots will appear here after you roll.
+          </div>
+        ) : (
+          <div style={{ display: "grid", gap: "0.9rem" }}>
         {rollHistory.map((entry) => {
           const isExpanded = expandedHistory.has(entry.id);
           const groupedTotals = Object.entries(entry.groupedDamageTotals).sort(
@@ -255,10 +212,13 @@ export default function RollHistoryPanel({
                   </div>
                 </div>
 
-                <HistoryToggleButton
-                  isExpanded={isExpanded}
+                <Button
                   onClick={() => toggleHistoryItem(entry.id)}
-                />
+                  variant="secondary"
+                  size="sm"
+                >
+                  {isExpanded ? "Hide Snapshot" : "View Snapshot"}
+                </Button>
               </div>
 
               {isExpanded && (
@@ -461,6 +421,7 @@ export default function RollHistoryPanel({
           );
         })}
       </div>
+      )}
     </div>
   );
 }

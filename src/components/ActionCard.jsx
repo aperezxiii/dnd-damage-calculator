@@ -1,43 +1,7 @@
 import { useState } from "react";
 import DamagePartEditor from "./DamagePartEditor";
-
-function ActionButton({
-  children,
-  onClick,
-  backgroundColor,
-  shadowColor = "rgba(0,0,0,0.12)",
-}) {
-  const [isHovered, setIsHovered] = useState(false);
-  const [isPressed, setIsPressed] = useState(false);
-
-  return (
-    <button
-      onClick={onClick}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => {
-        setIsHovered(false);
-        setIsPressed(false);
-      }}
-      onMouseDown={() => setIsPressed(true)}
-      onMouseUp={() => setIsPressed(false)}
-      style={{
-        backgroundColor,
-        color: "white",
-        border: "none",
-        padding: "0.65rem 1rem",
-        borderRadius: "8px",
-        fontWeight: "600",
-        cursor: "pointer",
-        transition: "transform 0.15s ease, box-shadow 0.2s ease, opacity 0.2s ease",
-        transform: isPressed ? "scale(0.98)" : isHovered ? "translateY(-1px)" : "translateY(0)",
-        boxShadow: isHovered ? `0 8px 18px ${shadowColor}` : "none",
-        opacity: isHovered ? 0.96 : 1,
-      }}
-    >
-      {children}
-    </button>
-  );
-}
+import Button from "./ui/Button";
+import { fieldLabelStyle, sectionLabelStyle, selectStyle } from "./ui/formStyles";
 
 export default function ActionCard({
   action,
@@ -112,37 +76,16 @@ export default function ActionCard({
             borderRadius: "12px",
           }}
         >
-          <label
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "0.45rem",
-            }}
-          >
+          <label style={fieldLabelStyle}>
             <span
-              style={{
-                fontSize: "0.8rem",
-                fontWeight: "700",
-                color: "#6b7280",
-                letterSpacing: "0.03em",
-                textTransform: "uppercase",
-              }}
+              style={sectionLabelStyle}
             >
               Crit Mode
             </span>
             <select
               value={action.critType}
               onChange={(e) => handleCritTypeChange(actionIndex, e.target.value)}
-              style={{
-                width: "100%",
-                padding: "0.65rem 0.75rem",
-                border: "1px solid #d1d5db",
-                borderRadius: "8px",
-                backgroundColor: "#ffffff",
-                fontSize: "0.95rem",
-                color: "#111827",
-                transition: "border-color 0.2s ease, box-shadow 0.2s ease",
-              }}
+              style={selectStyle}
             >
               <option value="none">Off</option>
               <option value="max">Max + Roll</option>
@@ -178,22 +121,14 @@ export default function ActionCard({
           paddingTop: "0.25rem",
         }}
       >
-        <ActionButton
-          onClick={() => addPart(actionIndex)}
-          backgroundColor="#2563eb"
-          shadowColor="rgba(37,99,235,0.22)"
-        >
+        <Button onClick={() => addPart(actionIndex)} variant="primary">
           Add Part
-        </ActionButton>
+        </Button>
 
         {actionsLength > 1 && (
-          <ActionButton
-            onClick={() => removeAction(actionIndex)}
-            backgroundColor="#ef4444"
-            shadowColor="rgba(239,68,68,0.22)"
-          >
+          <Button onClick={() => removeAction(actionIndex)} variant="danger">
             Remove Action
-          </ActionButton>
+          </Button>
         )}
       </div>
     </div>

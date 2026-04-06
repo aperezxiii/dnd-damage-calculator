@@ -1,54 +1,6 @@
 import { useState } from "react";
-
-function PanelButton({
-  children,
-  onClick,
-  backgroundColor,
-  textColor = "white",
-  border = "none",
-  disabled = false,
-  style = {},
-}) {
-  const [isHovered, setIsHovered] = useState(false);
-  const [isPressed, setIsPressed] = useState(false);
-
-  return (
-    <button
-      onClick={disabled ? undefined : onClick}
-      onMouseEnter={() => !disabled && setIsHovered(true)}
-      onMouseLeave={() => {
-        setIsHovered(false);
-        setIsPressed(false);
-      }}
-      onMouseDown={() => !disabled && setIsPressed(true)}
-      onMouseUp={() => setIsPressed(false)}
-      disabled={disabled}
-      style={{
-        backgroundColor,
-        color: textColor,
-        border,
-        padding: "0.65rem 0.95rem",
-        borderRadius: "10px",
-        fontWeight: "700",
-        fontSize: "0.92rem",
-        cursor: disabled ? "not-allowed" : "pointer",
-        transition: "transform 0.15s ease, box-shadow 0.2s ease, opacity 0.2s ease",
-        transform: disabled
-          ? "translateY(0)"
-          : isPressed
-          ? "scale(0.98)"
-          : isHovered
-          ? "translateY(-1px)"
-          : "translateY(0)",
-        boxShadow: !disabled && isHovered ? "0 8px 18px rgba(0,0,0,0.08)" : "none",
-        opacity: disabled ? 0.5 : isHovered ? 0.97 : 1,
-        ...style,
-      }}
-    >
-      {children}
-    </button>
-  );
-}
+import Button from "./ui/Button";
+import { inputStyle } from "./ui/formStyles";
 
 function formatTimestamp(value) {
   if (!value) return "Unknown";
@@ -171,13 +123,13 @@ function LoadoutRow({
               flexWrap: "wrap",
             }}
           >
-            <PanelButton onClick={() => loadLoadout(loadout.id)} backgroundColor="#16a34a">
+            <Button onClick={() => loadLoadout(loadout.id)} variant="primary">
               Load
-            </PanelButton>
+            </Button>
 
-            <PanelButton onClick={() => addLoadoutAsNewAction(loadout.id)} backgroundColor="#2563eb" style={{ opacity: 0.92 }}>
+            <Button onClick={() => addLoadoutAsNewAction(loadout.id)} variant="primary">
               + New Action
-            </PanelButton>
+            </Button>
           </div>
           
           <div
@@ -198,24 +150,21 @@ function LoadoutRow({
               flexWrap: "wrap",
             }}
           >
-            <PanelButton
+            <Button
               onClick={() => setShowTargetSelector((prev) => !prev)}
-              backgroundColor="#ffffff"
-              textColor="#111827"
-              border="1px solid #d1d5db"
+              variant="secondary"
               disabled={!canAddToAction}
             >
               {!canAddToAction ? "Add to Action (1 action only)" : "Add to Action"}
-            </PanelButton>
+            </Button>
 
-            <PanelButton
+            <Button
               onClick={() => deleteLoadout(loadout.id)}
-              backgroundColor="#ffffff"
-              textColor="#b91c1c"
-              border="1px solid #fca5a5"
+              variant="secondary"
+              style={{ color: "#b91c1c", border: "1px solid #fca5a5" }}
             >
               Delete
-            </PanelButton>
+            </Button>
           </div>
         </div>
       </div>
@@ -251,15 +200,13 @@ function LoadoutRow({
             }}
           >
             {actions.map((_, actionIndex) => (
-              <PanelButton
+              <Button
                 key={actionIndex}
                 onClick={() => handleTargetClick(actionIndex)}
-                backgroundColor="#ffffff"
-                textColor="#111827"
-                border="1px solid #cbd5e1"
+                variant="secondary"
               >
                 Action {actionIndex + 1}
-              </PanelButton>
+              </Button>
             ))}
           </div>
         </div>
@@ -272,6 +219,7 @@ export default function LoadoutsPanel({
   loadoutName,
   setLoadoutName,
   loadoutMessage,
+  loadoutMessageType,
   showBuilderCTA,
   goToBuilder,
   loadouts,
@@ -281,7 +229,29 @@ export default function LoadoutsPanel({
   addLoadoutToAction,
   deleteLoadout,
   actions,
+  storageLabel,
+  pendingDeletedLoadout,
+  undoDeleteLoadout,
 }) {
+  const isError = loadoutMessageType === "error";
+  const bannerActionColor = isError ? "#991b1b" : "#065f46";
+  const bannerActionBorder = isError ? "#fecaca" : "#a7f3d0";
+
+  const getBannerTitle = () => {
+    if (isError) return "Loadout Error";
+
+    const message = loadoutMessage.toLowerCase();
+
+    if (message.startsWith("saved ")) return "Loadout Saved";
+    if (message.startsWith("loaded ")) return "Loadout Applied";
+    if (message.startsWith("added ") && message.includes("new action")) return "Action Added";
+    if (message.startsWith("added ") && message.includes("to action")) return "Loadout Applied";
+    if (message.startsWith("deleted ")) return "Loadout Deleted";
+    if (message.startsWith("restored ")) return "Loadout Restored";
+
+    return "Loadout Updated";
+  };
+
   return (
     <div
       style={{
@@ -316,37 +286,121 @@ export default function LoadoutsPanel({
         </p>
       </div>
 
+      <div
+        style={{
+          marginTop: "0.85rem",
+          marginBottom: "1.1rem",
+          padding: "0.8rem 0.95rem",
+          backgroundColor: "#f8fafc",
+          border: "1px solid #e5e7eb",
+          borderRadius: "12px",
+          color: "#475569",
+          fontSize: "0.9rem",
+          fontWeight: "600",
+        }}
+      >
+        {storageLabel}
+      </div>
+
       {loadoutMessage && (
         <div
           style={{
             marginBottom: "1rem",
-            padding: "0.85rem 1rem",
-            backgroundColor: "#ecfdf5",
-            border: "1px solid #a7f3d0",
+            padding: "0.95rem 1rem",
+            backgroundColor: isError ? "#fef2f2" : "#ecfdf5",
+            border: isError ? "1px solid #fecaca" : "1px solid #a7f3d0",
             borderRadius: "12px",
-            color: "#065f46",
-            fontSize: "0.94rem",
-            fontWeight: "600",
+            color: isError ? "#991b1b" : "#065f46",
             display: "flex",
             justifyContent: "space-between",
-            alignItems: "center",
-            gap: "0.75rem",
+            alignItems: "flex-start",
+            gap: "0.9rem",
             flexWrap: "wrap",
           }}
         >
-          <span>{loadoutMessage}</span>
-
-          {showBuilderCTA && (
-            <PanelButton
-              onClick={goToBuilder}
-              backgroundColor="#ffffff"
-              textColor="#065f46"
-              border="1px solid #a7f3d0"
-              style={{ padding: "0.5rem 0.8rem" }}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "flex-start",
+              gap: "0.7rem",
+              flex: "1 1 320px",
+              minWidth: "240px",
+            }}
+          >
+            <div
+              style={{
+                fontSize: "1rem",
+                lineHeight: 1,
+                marginTop: "0.05rem",
+              }}
             >
-              Go to Builder
-            </PanelButton>
-          )}
+              {isError ? "❌" : "✅"}
+            </div>
+
+            <div>
+              <div
+                style={{
+                  fontSize: "0.82rem",
+                  fontWeight: "700",
+                  letterSpacing: "0.03em",
+                  textTransform: "uppercase",
+                  opacity: 0.8,
+                  marginBottom: "0.2rem",
+                }}
+              >
+                {getBannerTitle()}
+              </div>
+
+              <div
+                style={{
+                  fontSize: "0.95rem",
+                  fontWeight: "600",
+                  lineHeight: 1.45,
+                }}
+              >
+                {loadoutMessage}
+              </div>
+            </div>
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              gap: "0.5rem",
+              flexWrap: "wrap",
+              alignItems: "center",
+            }}
+          >
+            {pendingDeletedLoadout && (
+              <Button
+                onClick={undoDeleteLoadout}
+                variant="secondary"
+                size="sm"
+                style={{
+                  color: bannerActionColor,
+                  border: `1px solid ${bannerActionBorder}`,
+                  backgroundColor: "#ffffff",
+                }}
+              >
+                Undo
+              </Button>
+            )}
+
+            {showBuilderCTA && (
+              <Button
+                onClick={goToBuilder}
+                variant="secondary"
+                size="sm"
+                style={{
+                  color: bannerActionColor,
+                  border: `1px solid ${bannerActionBorder}`,
+                  backgroundColor: "#ffffff",
+                }}
+              >
+                Go to Builder
+              </Button>
+            )}
+          </div>
         </div>
       )}
 
@@ -365,27 +419,22 @@ export default function LoadoutsPanel({
           onChange={(e) => setLoadoutName(e.target.value)}
           placeholder="Enter loadout name"
           style={{
+            ...inputStyle,
             flex: "1 1 280px",
             minWidth: "240px",
-            padding: "0.8rem 0.9rem",
-            border: "1px solid #d1d5db",
-            borderRadius: "10px",
-            backgroundColor: "#ffffff",
-            fontSize: "0.95rem",
-            color: "#111827",
-            boxSizing: "border-box",
           }}
         />
 
-        <PanelButton onClick={saveLoadout} backgroundColor="#2563eb">
+        <Button onClick={saveLoadout} variant="primary" size="lg">
           Save Loadout
-        </PanelButton>
+        </Button>
       </div>
 
       {loadouts.length === 0 ? (
         <div
           style={{
-            padding: "1rem",
+            padding: "1.5rem",
+            textAlign: "center",
             backgroundColor: "#f9fafb",
             border: "1px dashed #d1d5db",
             borderRadius: "12px",

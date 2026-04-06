@@ -1,38 +1,13 @@
-import { useState } from "react";
 import { Switch } from "./ui/switch";
-
-function SmallDangerButton({ children, onClick }) {
-  const [isHovered, setIsHovered] = useState(false);
-  const [isPressed, setIsPressed] = useState(false);
-
-  return (
-    <button
-      onClick={onClick}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => {
-        setIsHovered(false);
-        setIsPressed(false);
-      }}
-      onMouseDown={() => setIsPressed(true)}
-      onMouseUp={() => setIsPressed(false)}
-      style={{
-        backgroundColor: "#ef4444",
-        color: "white",
-        border: "none",
-        padding: "0.45rem 0.75rem",
-        borderRadius: "8px",
-        fontWeight: "600",
-        cursor: "pointer",
-        transition: "transform 0.15s ease, box-shadow 0.2s ease, opacity 0.2s ease",
-        transform: isPressed ? "scale(0.98)" : isHovered ? "translateY(-1px)" : "translateY(0)",
-        boxShadow: isHovered ? "0 8px 18px rgba(239,68,68,0.2)" : "none",
-        opacity: isHovered ? 0.96 : 1,
-      }}
-    >
-      {children}
-    </button>
-  );
-}
+import Button from "./ui/Button";
+import {
+  inputStyle,
+  selectStyle,
+  fieldLabelStyle,
+  sectionLabelStyle,
+  toggleCardStyle,
+  toggleLabelStyle,
+} from "./ui/formStyles";
 
 export default function DamagePartEditor({
   part,
@@ -77,23 +52,18 @@ export default function DamagePartEditor({
         </h4>
 
         {partsLength > 1 && (
-          <SmallDangerButton onClick={() => removePart(actionIndex, partIndex)}>
+          <Button
+            onClick={() => removePart(actionIndex, partIndex)}
+            variant="danger"
+            size="sm"
+          >
             Remove Part
-          </SmallDangerButton>
+          </Button>
         )}
       </div>
 
       <div style={{ marginBottom: "1rem" }}>
-        <div
-          style={{
-            marginBottom: "0.5rem",
-            fontSize: "0.78rem",
-            fontWeight: "700",
-            color: "#6b7280",
-            letterSpacing: "0.03em",
-            textTransform: "uppercase",
-          }}
-        >
+        <div style={sectionLabelStyle}>
           Identity
         </div>
 
@@ -104,56 +74,20 @@ export default function DamagePartEditor({
             gap: "0.75rem",
           }}
         >
-          <label
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "0.4rem",
-              fontSize: "0.92rem",
-              fontWeight: "600",
-              color: "#374151",
-            }}
-          >
+          <label style={fieldLabelStyle}>
             <span>Name</span>
             <input
-              style={{
-                width: "100%",
-                padding: "0.65rem 0.75rem",
-                border: "1px solid #d1d5db",
-                borderRadius: "8px",
-                backgroundColor: "#ffffff",
-                fontSize: "0.95rem",
-                color: "#111827",
-                boxSizing: "border-box",
-              }}
+              style={inputStyle}
               value={part.name}
               onChange={(e) => handlePartChange(actionIndex, partIndex, "name", e.target.value)}
               placeholder="e.g., Longsword"
             />
           </label>
 
-          <label
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "0.4rem",
-              fontSize: "0.92rem",
-              fontWeight: "600",
-              color: "#374151",
-            }}
-          >
+         <label style={fieldLabelStyle}>
             <span>Damage Type</span>
             <select
-              style={{
-                width: "100%",
-                padding: "0.65rem 0.75rem",
-                border: "1px solid #d1d5db",
-                borderRadius: "8px",
-                backgroundColor: "#ffffff",
-                fontSize: "0.95rem",
-                color: "#111827",
-                boxSizing: "border-box",
-              }}
+              style={selectStyle}
               value={part.damageType}
               onChange={(e) => handlePartChange(actionIndex, partIndex, "damageType", e.target.value)}
             >
@@ -168,16 +102,7 @@ export default function DamagePartEditor({
       </div>
 
       <div style={{ marginBottom: "1rem" }}>
-        <div
-          style={{
-            marginBottom: "0.5rem",
-            fontSize: "0.78rem",
-            fontWeight: "700",
-            color: "#6b7280",
-            letterSpacing: "0.03em",
-            textTransform: "uppercase",
-          }}
-        >
+        <div style={sectionLabelStyle}>
           Dice Setup
         </div>
 
@@ -188,28 +113,10 @@ export default function DamagePartEditor({
             gap: "0.75rem",
           }}
         >
-          <label
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "0.4rem",
-              fontSize: "0.92rem",
-              fontWeight: "600",
-              color: "#374151",
-            }}
-          >
+          <label style={fieldLabelStyle}>
             <span>Dice Count</span>
             <input
-              style={{
-                width: "100%",
-                padding: "0.65rem 0.75rem",
-                border: "1px solid #d1d5db",
-                borderRadius: "8px",
-                backgroundColor: "#ffffff",
-                fontSize: "0.95rem",
-                color: "#111827",
-                boxSizing: "border-box",
-              }}
+              style={inputStyle}
               type="text"
               value={part.diceCount}
               onChange={(e) => handlePartChange(actionIndex, partIndex, "diceCount", e.target.value)}
@@ -220,28 +127,10 @@ export default function DamagePartEditor({
             />
           </label>
 
-          <label
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "0.4rem",
-              fontSize: "0.92rem",
-              fontWeight: "600",
-              color: "#374151",
-            }}
-          >
+          <label style={fieldLabelStyle}>
             <span>Dice Type</span>
             <select
-              style={{
-                width: "100%",
-                padding: "0.65rem 0.75rem",
-                border: "1px solid #d1d5db",
-                borderRadius: "8px",
-                backgroundColor: "#ffffff",
-                fontSize: "0.95rem",
-                color: "#111827",
-                boxSizing: "border-box",
-              }}
+              style={selectStyle}
               value={part.diceType}
               onChange={(e) => handlePartChange(actionIndex, partIndex, "diceType", e.target.value)}
             >
@@ -253,28 +142,10 @@ export default function DamagePartEditor({
             </select>
           </label>
 
-          <label
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "0.4rem",
-              fontSize: "0.92rem",
-              fontWeight: "600",
-              color: "#374151",
-            }}
-          >
+          <label style={fieldLabelStyle}>
             <span>Modifier</span>
             <input
-              style={{
-                width: "100%",
-                padding: "0.65rem 0.75rem",
-                border: "1px solid #d1d5db",
-                borderRadius: "8px",
-                backgroundColor: "#ffffff",
-                fontSize: "0.95rem",
-                color: "#111827",
-                boxSizing: "border-box",
-              }}
+              style={inputStyle}
               type="text"
               value={part.modifier}
               onChange={(e) => handlePartChange(actionIndex, partIndex, "modifier", e.target.value)}
@@ -288,16 +159,7 @@ export default function DamagePartEditor({
       </div>
 
       <div>
-        <div
-          style={{
-            marginBottom: "0.5rem",
-            fontSize: "0.78rem",
-            fontWeight: "700",
-            color: "#6b7280",
-            letterSpacing: "0.03em",
-            textTransform: "uppercase",
-          }}
-        >
+        <div style={sectionLabelStyle}>
           Damage Modifiers
         </div>
 
@@ -308,26 +170,9 @@ export default function DamagePartEditor({
             flexWrap: "wrap",
           }}
         >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: "0.75rem",
-              minWidth: "180px",
-              padding: "0.65rem 0.85rem",
-              backgroundColor: "#ffffff",
-              border: "1px solid #e5e7eb",
-              borderRadius: "10px",
-              transition: "box-shadow 0.2s ease, border-color 0.2s ease",
-            }}
-          >
+          <div style={toggleCardStyle}>
             <span
-              style={{
-                fontSize: "0.92rem",
-                fontWeight: "600",
-                color: "#374151",
-              }}
+              style={toggleLabelStyle}
             >
               Vulnerable
             </span>
@@ -339,26 +184,9 @@ export default function DamagePartEditor({
             />
           </div>
 
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: "0.75rem",
-              minWidth: "180px",
-              padding: "0.65rem 0.85rem",
-              backgroundColor: "#ffffff",
-              border: "1px solid #e5e7eb",
-              borderRadius: "10px",
-              transition: "box-shadow 0.2s ease, border-color 0.2s ease",
-            }}
-          >
+          <div style={toggleCardStyle}>
             <span
-              style={{
-                fontSize: "0.92rem",
-                fontWeight: "600",
-                color: "#374151",
-              }}
+              style={toggleLabelStyle}
             >
               Resistant
             </span>

@@ -14,3 +14,14 @@
 body {
   font-family: 'Inter', sans-serif;
 }
+.auth-input {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.auth-input::placeholder {
+  color: rgba(255, 255, 255, 0.55);
+}
+.auth-input:focus {
+  outline: none;
+  border-color: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.08);
+}
