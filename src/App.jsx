@@ -6,7 +6,11 @@ import ResultsPanel from "./components/ResultsPanel";
 import RollHistoryPanel from "./components/RollHistoryPanel";
 import { calculateDamage } from "./damageCalculator";
 import Button from "./components/ui/Button";
-import { darkInputStyle } from "./components/ui/formStyles";
+import damageTypes from "./constants/damageTypes";
+import diceTypes from "./constants/diceTypes";
+import TabsNav from "./components/navigation/TabsNav";
+import AuthPanel from "./components/auth/AuthPanel";
+import useLoadouts from "./hooks/useLoadouts";
 
 const defaultPart = {
   name: "",
@@ -23,62 +27,6 @@ const defaultAction = () => ({
   parts: [{ ...defaultPart }],
 });
 
-const LOADOUTS_STORAGE_KEY = "dnd-damage-calculator-loadouts";
-
-function TabButton({ label, isActive, onClick }) {
-  const [isHovered, setIsHovered] = useState(false);
-  const [isPressed, setIsPressed] = useState(false);
-
-  return (
-    <button
-      onClick={onClick}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => {
-        setIsHovered(false);
-        setIsPressed(false);
-      }}
-      onMouseDown={() => setIsPressed(true)}
-      onMouseUp={() => setIsPressed(false)}
-      style={{
-        padding: "0.6rem 1rem",
-        borderRadius: "999px",
-        border: "none",
-        fontWeight: "700",
-        fontSize: "0.95rem",
-        cursor: "pointer",
-        whiteSpace: "nowrap",
-
-        backgroundColor: isActive
-          ? "#111827"
-          : isHovered
-          ? "#e5e7eb"
-          : "#f3f4f6",
-
-        color: isActive ? "#ffffff" : "#374151",
-
-        transform: isPressed
-          ? "scale(0.98)"
-          : isHovered
-          ? "translateY(-1px)"
-          : "translateY(0)",
-
-        boxShadow: isActive
-          ? "0 6px 16px rgba(0,0,0,0.12)"
-          : isHovered
-          ? "0 8px 18px rgba(0,0,0,0.08)"
-          : "none",
-
-        outline: isActive ? "2px solid rgba(17,24,39,0.15)" : "none",
-
-        transition: "all 0.18s ease",
-      }}
-    >
-      {label}
-    </button>
-  );
-}
-
-
 function App() {  
   
   const [email, setEmail] = useState("");
@@ -90,82 +38,39 @@ function App() {
   const [expandedBreakdowns, setExpandedBreakdowns] = useState(new Set());
   const [rollHistory, setRollHistory] = useState([]);
   const [expandedHistory, setExpandedHistory] = useState(new Set());
-  const [localLoadouts, setLocalLoadouts] = useState(() => {
-    try {
-      const raw = localStorage.getItem(LOADOUTS_STORAGE_KEY);
-      if (!raw) return [];
-
-      const parsed = JSON.parse(raw);
-      return Array.isArray(parsed) ? parsed : [];
-    } catch (error) {
-      console.error("Failed to read local loadouts from localStorage:", error);
-      return [];
-    }
-  });
-
-  const [cloudLoadouts, setCloudLoadouts] = useState([]);
-  const [loadoutName, setLoadoutName] = useState("");
   const [activeTab, setActiveTab] = useState("builder");
-  const [loadoutMessage, setLoadoutMessage] = useState("");
-  const [loadoutMessageType, setLoadoutMessageType] = useState("success");
   const [authMessage, setAuthMessage] = useState("");
   const [authMessageType, setAuthMessageType] = useState("success");
-  const [showBuilderCTA, setShowBuilderCTA] = useState(false);
   const resultsRef = useRef(null);
-  const [pendingDeletedLoadout, setPendingDeletedLoadout] = useState(null);
-  const deleteTimeoutRef = useRef(null);
-
   const clearDerivedState = () => {
     setResults([]);
     setExpandedBreakdowns(new Set());
   };
-
-  const deepClone = (value) => JSON.parse(JSON.stringify(value));
-
-  const normalizeLoadoutName = (name) => name.trim();
-
-  const createLoadoutId = () => {
-    if (typeof crypto !== "undefined" && crypto.randomUUID) {
-      return crypto.randomUUID();
-    }
-    return `${Date.now()}-${Math.random()}`;
-  };
-
-  const sanitizePartForLoadout = (part) => ({
-    ...deepClone(part),
-    vulnerable: false,
-    resistant: false,
+  const {
+    loadoutName,
+    setLoadoutName,
+    loadoutMessage,
+    loadoutMessageType,
+    showBuilderCTA,
+    pendingDeletedLoadout,
+    deepClone,
+    visibleLoadouts,
+    loadoutStorageLabel,
+    loadLoadout,
+    addLoadoutAsNewAction,
+    addLoadoutToAction,
+    saveLoadout,
+    deleteLoadout,
+    undoDeleteLoadout,
+    clearLoadoutSessionState,
+  } = useLoadouts({
+    user,
+    actions,
+    setActions,
+    defaultAction,
+    clearDerivedState,
   });
-
-  const sanitizeActionForLoadout = (action) => ({
-    ...deepClone(action),
-    critType: "none",
-    parts: (action.parts || []).map(sanitizePartForLoadout),
-  });
-
-  const visibleLoadouts = user ? cloudLoadouts : localLoadouts;
-
-  const isSignedIn = Boolean(user);
-  const loadoutStorageLabel = isSignedIn
-    ? `Loadouts are saved to your account${user?.email ? ` (${user.email})` : ""}.`
-    : "Loadouts are saved on this device.";
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(LOADOUTS_STORAGE_KEY, JSON.stringify(localLoadouts));
-    } catch (error) {
-      console.error("Failed to write local loadouts to localStorage:", error);
-    }
-  }, [localLoadouts]);  
-
-  useEffect(() => {
-    if (!loadoutMessage) return;
-    const timeoutId = setTimeout(() => {
-      setLoadoutMessage("");
-    }, pendingDeletedLoadout ? 5000 : 2500);
-    return () => clearTimeout(timeoutId);
-  }, [loadoutMessage, pendingDeletedLoadout]);
-
+  
   useEffect(() => {
     if (!authMessage) return;
     const timeoutId = setTimeout(() => {
@@ -203,20 +108,6 @@ function App() {
     return () => {
       isMounted = false;
       subscription.unsubscribe();
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!user) return;
-
-    fetchLoadoutsFromSupabase();
-  }, [user]);
-
-  useEffect(() => {
-    return () => {
-      if (deleteTimeoutRef.current) {
-        clearTimeout(deleteTimeoutRef.current);
-      }
     };
   }, []);
 
@@ -258,12 +149,7 @@ function App() {
       return;
     }
     
-    setCloudLoadouts([]);
-    setLoadoutName("");
-    setLoadoutMessage("");
-    setShowBuilderCTA(false);
-    clearPendingDeleteTimer();
-    setPendingDeletedLoadout(null);
+    clearLoadoutSessionState();
     setAuthMessage("Signed out successfully.");
     setAuthMessageType("success");
   };
@@ -294,291 +180,6 @@ function App() {
     setPassword("");
     setAuthMessage("Account created. You can sign in now.");
     setAuthMessageType("success");
-  };
-
-  const buildLoadoutSnapshot = (name, existingLoadout = null) => {
-    const now = new Date().toISOString();
-
-    return {
-      id: existingLoadout?.id || createLoadoutId(),
-      name,
-      createdAt: existingLoadout?.createdAt || now,
-      updatedAt: now,
-      version: 1,
-      actionsSnapshot: actions.map(sanitizeActionForLoadout),
-    };
-  };
-
-  const saveLoadoutToSupabase = async (loadout) => {
-    if (!user) {
-      const error = new Error("No signed-in user found.");
-      console.error(error.message);
-      return { data: null, error };
-    }
-
-    const { data, error } = await supabase
-      .from("loadouts")
-      .upsert(
-        [
-          {
-            user_id: user.id,
-            name: loadout.name,
-            data: loadout,
-          },
-        ],
-        {
-          onConflict: "user_id,name",
-        }
-      )
-      .select();
-
-    console.log("SAVE LOADOUT RESULT:", { data, error });
-    return { data, error };
-  };
-
-  const deleteLoadoutFromSupabase = async (loadout) => {
-    if (!user) return { data: null, error: new Error("No signed-in user found.") };
-
-    const { data, error } = await supabase
-      .from("loadouts")
-      .delete()
-      .eq("user_id", user.id)
-      .eq("name", loadout.name);
-
-    console.log("DELETE LOADOUT RESULT:", { data, error });
-    return { data, error };
-  };
-
-  const restoreLoadoutToSupabase = async (loadout) => {
-    if (!user) {
-      const error = new Error("No signed-in user found.");
-      console.error(error.message);
-      return { data: null, error };
-    }
-
-    const { data, error } = await supabase
-      .from("loadouts")
-      .upsert(
-        [
-          {
-            user_id: user.id,
-            name: loadout.name,
-            data: loadout,
-          },
-        ],
-        {
-          onConflict: "user_id,name",
-        }
-      )
-      .select();
-
-    console.log("RESTORE LOADOUT RESULT:", { data, error });
-    return { data, error };
-  };
-
-  const clearPendingDeleteTimer = () => {
-    if (deleteTimeoutRef.current) {
-      clearTimeout(deleteTimeoutRef.current);
-      deleteTimeoutRef.current = null;
-    }
-  };
-
-  const finalizePendingDelete = () => {
-    clearPendingDeleteTimer();
-    setPendingDeletedLoadout(null);
-  };
-
-  const undoDeleteLoadout = async () => {
-    if (!pendingDeletedLoadout) return;
-
-    const { loadout, source } = pendingDeletedLoadout;
-
-    clearPendingDeleteTimer();
-
-    if (source === "cloud") {
-      const { error } = await restoreLoadoutToSupabase(loadout);
-      if (error) {
-        console.error("Failed to restore cloud loadout:", error);
-        setLoadoutMessage(`Could not restore "${loadout.name}"`);
-        setLoadoutMessageType("error");
-        setPendingDeletedLoadout(null);
-        return;
-      }
-
-      setCloudLoadouts((prev) => [loadout, ...prev]);
-      setLoadoutMessage(`Restored "${loadout.name}" to account`);
-      setLoadoutMessageType("success");
-    } else {
-      setLocalLoadouts((prev) => [loadout, ...prev]);
-      setLoadoutMessage(`Restored "${loadout.name}" locally`);
-      setLoadoutMessageType("success");
-    }
-
-    setPendingDeletedLoadout(null);
-  };
-
-  const fetchLoadoutsFromSupabase = async () => {
-    if (!user) return;
-
-    const { data, error } = await supabase
-      .from("loadouts")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("updated_at", { ascending: false });
-
-    if (error) {
-      console.error("Failed to fetch loadouts:", error);
-      return;
-    }
-
-    const mappedLoadouts = (data || [])
-      .map((row) => row.data)
-      .filter(Boolean);
-
-    setCloudLoadouts(mappedLoadouts);
-  };
-
-  const saveLoadout = async () => {
-    const trimmedName = normalizeLoadoutName(loadoutName);
-    if (!trimmedName) return;
-
-    const sourceLoadouts = user ? cloudLoadouts : localLoadouts;
-    const existing = sourceLoadouts.find((loadout) => loadout.name === trimmedName);
-    const nextLoadout = buildLoadoutSnapshot(trimmedName, existing || null);
-
-    if (user) {
-      const { error } = await saveLoadoutToSupabase(nextLoadout);
-
-      if (error) {
-        console.error("Failed to save cloud loadout:", error);
-        setLoadoutMessage(`Could not save "${trimmedName}" to account`);
-        setLoadoutMessageType("error");
-        setShowBuilderCTA(false);
-        return;
-      }
-
-      setCloudLoadouts((prev) => {
-        if (existing) {
-          return prev.map((loadout) =>
-            loadout.id === existing.id ? nextLoadout : loadout
-          );
-        }
-
-        return [nextLoadout, ...prev];
-      });
-    } else {
-      setLocalLoadouts((prev) => {
-        if (existing) {
-          return prev.map((loadout) =>
-            loadout.id === existing.id ? nextLoadout : loadout
-          );
-        }
-
-        return [nextLoadout, ...prev];
-      });
-    }
-
-    setLoadoutName(trimmedName);
-    setLoadoutMessage(`Saved "${trimmedName}"`);
-    setLoadoutMessageType("success");
-    setShowBuilderCTA(false);
-  };
-
-  const loadLoadout = (loadoutId) => {
-    const selected = visibleLoadouts.find((loadout) => loadout.id === loadoutId);
-    if (!selected) return;
-
-    setActions(deepClone(selected.actionsSnapshot || [defaultAction()]));
-    clearDerivedState();
-    setLoadoutName(selected.name || "");
-    setLoadoutMessage(`Loaded "${selected.name}" into Builder`);
-    setLoadoutMessageType("success");
-    setShowBuilderCTA(true);
-  };
-
-  const addLoadoutAsNewAction = (loadoutId) => {
-    const selected = visibleLoadouts.find((loadout) => loadout.id === loadoutId);
-    if (!selected) return;
-
-    const sanitizedActions = (selected.actionsSnapshot || []).map(sanitizeActionForLoadout);
-    if (sanitizedActions.length === 0) return;
-
-    setActions((prev) => [...prev, ...sanitizedActions]);
-    clearDerivedState();
-    setLoadoutMessage(`Added "${selected.name}" as a new action`);
-    setLoadoutMessageType("success");
-    setShowBuilderCTA(true);
-  };
-
-  const addLoadoutToAction = (loadoutId, targetActionIndex) => {
-    const selected = visibleLoadouts.find((loadout) => loadout.id === loadoutId);
-    if (!selected) return;
-
-    const sourceActions = selected.actionsSnapshot || [];
-    if (sourceActions.length !== 1) return;
-
-    const sourceAction = sourceActions[0];
-    const partsToAppend = (sourceAction.parts || []).map(sanitizePartForLoadout);
-
-    if (partsToAppend.length === 0) return;
-
-    setActions((prev) => {
-      if (!prev[targetActionIndex]) return prev;
-
-      const updated = deepClone(prev);
-      updated[targetActionIndex].parts.push(...partsToAppend);
-      return updated;
-    });
-
-    clearDerivedState();
-    setLoadoutMessage(`Added "${selected.name}" to Action ${targetActionIndex + 1}`);
-    setLoadoutMessageType("success");
-    setShowBuilderCTA(true);
-  };
-
-  const deleteLoadout = async (loadoutId) => {
-    const selected = visibleLoadouts.find((loadout) => loadout.id === loadoutId);
-    if (!selected) return;
-
-    clearPendingDeleteTimer();
-
-    if (user) {
-      const confirmed = window.confirm(
-        `Delete "${selected.name}" from your account? This cannot be undone.`
-      );
-
-      if (!confirmed) return;
-
-      const { error } = await deleteLoadoutFromSupabase(selected);
-      if (error) {
-        console.error("Failed to delete cloud loadout:", error);
-        setLoadoutMessage(`Could not delete "${selected.name}" from account`);
-        setLoadoutMessageType("error");
-        return;
-      }
-
-      setCloudLoadouts((prev) => prev.filter((loadout) => loadout.id !== loadoutId));
-      setPendingDeletedLoadout({
-        loadout: selected,
-        source: "cloud",
-      });
-      setLoadoutMessage(`Deleted "${selected.name}" from account`);
-      setLoadoutMessageType("success");
-    } else {
-      setLocalLoadouts((prev) => prev.filter((loadout) => loadout.id !== loadoutId));
-      setPendingDeletedLoadout({
-        loadout: selected,
-        source: "local",
-      });
-      setLoadoutMessage(`Deleted "${selected.name}" locally`);
-      setLoadoutMessageType("success");
-    }
-
-    setShowBuilderCTA(false);
-
-    deleteTimeoutRef.current = setTimeout(() => {
-      finalizePendingDelete();
-    }, 5000);
   };
 
   const getPreAdjustmentDamage = (result, critType) => {
@@ -801,15 +402,6 @@ function App() {
     setExpandedHistory(new Set());
   };
 
-  const damageTypes = [
-    "Neutral", "Slashing", "Piercing", "Bludgeoning",
-    "Fire", "Cold", "Lightning", "Thunder",
-    "Acid", "Poison", "Necrotic", "Radiant",
-    "Psychic", "Force",
-  ];
-
-  const diceTypes = ["d4", "d6", "d8", "d10", "d12", "d20", "d100"];
-
   const liveGrandTotal = results.reduce((totalSum, group, actionIndex) => {
     return totalSum + group.reduce((sum, result, partIndex) => {
       const action = actions[actionIndex];
@@ -896,165 +488,21 @@ function App() {
           >
             Build attack actions, configure crit behavior, and calculate grouped damage totals with live breakdowns.
           </p>
-          <div
-            style={{
-              marginTop: "0.85rem",
-              display: "flex",
-              flexWrap: "wrap",
-              gap: "0.65rem",
-              alignItems: "center",
-            }}
-          >
-            {user ? (
-              <div
-                style={{
-                  fontSize: "0.9rem",
-                  color: "#9ca3af",
-                }}
-              >
-                Signed in as: <strong>{user.email}</strong>
-              </div>
-            ) : (
-              <div
-                style={{
-                  fontSize: "0.9rem",
-                  color: "#9ca3af",
-                }}
-              >
-                Not signed in
-              </div>
-            )}
-
-            <div
-              style={{
-                padding: "0.35rem 0.65rem",
-                borderRadius: "999px",
-                fontSize: "0.8rem",
-                fontWeight: "700",
-                backgroundColor: user ? "rgba(34,197,94,0.15)" : "rgba(255,255,255,0.08)",
-                color: user ? "#bbf7d0" : "#d1d5db",
-                border: user
-                  ? "1px solid rgba(34,197,94,0.3)"
-                  : "1px solid rgba(255,255,255,0.12)",
-              }}
-            >
-              {user ? "Cloud Save Active" : "Local Save Only"}
-            </div>
+          <AuthPanel
+            user={user}
+            email={email}
+            password={password}
+            setEmail={setEmail}
+            setPassword={setPassword}
+            handleSignIn={handleSignIn}
+            handleSignUp={handleSignUp}
+            handleSignOut={handleSignOut}
+            authMessage={authMessage}
+            authMessageType={authMessageType}
+          />
           </div>
 
-          <div
-            style={{
-              marginTop: "1rem",
-              display: "flex",
-              gap: "0.75rem",
-              flexWrap: "wrap",
-              alignItems: "flex-end",
-            }}
-          >            
-            {!user ? (
-              <>
-                <input
-                  className="auth-input"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Email"
-                  style={{
-                    ...darkInputStyle,
-                    width: "auto",
-                    flex: "1 1 260px",
-                    minWidth: "220px",
-                    maxWidth: "320px",
-                  }}
-                />
-
-                <input
-                  className="auth-input"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Password"
-                  style={{
-                    ...darkInputStyle,
-                    width: "auto",
-                    flex: "1 1 220px",
-                    minWidth: "180px",
-                    maxWidth: "280px",
-                  }}
-                />
-                <div style={{ display: "flex", gap: "0.5rem" }}>
-                  <Button onClick={handleSignIn} variant="primary" size="lg">
-                    Sign In
-                  </Button>
-
-                  <Button onClick={handleSignUp} variant="dark" size="lg">
-                    Sign Up
-                  </Button>
-                </div>
-              </>
-            ) : (
-              <Button onClick={handleSignOut} variant="danger" size="lg">
-                Sign Out
-              </Button>
-            )}
-          </div>
-          {authMessage && (
-              <div
-                style={{
-                  marginTop: "0.9rem",
-                  maxWidth: "720px",
-                  padding: "0.85rem 0.95rem",
-                  backgroundColor: authMessageType === "error" ? "rgba(127,29,29,0.22)" : "rgba(34,197,94,0.14)",
-                  border: authMessageType === "error"
-                    ? "1px solid rgba(248,113,113,0.35)"
-                    : "1px solid rgba(74,222,128,0.28)",
-                  borderRadius: "12px",
-                  color: authMessageType === "error" ? "#fecaca" : "#dcfce7",
-                  fontSize: "0.92rem",
-                  fontWeight: "600",
-                  lineHeight: 1.45,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.6rem",
-                  flexWrap: "wrap",
-                }}
-              >
-                <span style={{ fontSize: "0.95rem", lineHeight: 1 }}>
-                  {authMessageType === "error" ? "❌" : "✅"}
-                </span>
-                <span>{authMessage}</span>
-              </div>
-            )}
-          </div>
-
-        <div
-          style={{
-            display: "flex",
-            gap: "0.5rem",
-            marginBottom: "1.5rem",
-            borderBottom: "1px solid #e5e7eb",
-            paddingBottom: "0.5rem",
-            overflowX: "auto",
-          }}
-        >
-          {[
-            { key: "builder", label: "Builder" },
-            { key: "results", label: "Results" },
-            { key: "history", label: "History" },
-            { key: "loadouts", label: "Loadouts" },
-          ].map((tab) => {
-            const isActive = activeTab === tab.key;
-
-            return (
-              <TabButton
-                key={tab.key}
-                label={tab.label}
-                isActive={isActive}
-                onClick={() => setActiveTab(tab.key)}
-              />
-            );
-          })}
-        </div>
+        <TabsNav activeTab={activeTab} setActiveTab={setActiveTab} />
 
     {activeTab === "builder" && (
       <>
