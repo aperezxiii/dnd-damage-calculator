@@ -1,12 +1,31 @@
-# React + Vite
+# DND Damage App
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A React and Vite application for Dungeons & Dragons damage calculations. The project uses Supabase for connected data features and Tailwind CSS for styling.
 
-Currently, two official plugins are available:
+## Project status
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+The existing application is being connected to a durable project-management system before further optimization or development. See `CONTEXT.md` for current decisions, open questions, and next actions.
 
-## Expanding the ESLint configuration
+## Local commands
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+| Command | Purpose |
+| --- | --- |
+| `npm run dev` | Start the local Vite development server |
+| `npm run build` | Create a production build |
+| `npm run lint` | Run ESLint |
+| `npm run preview` | Preview the production build locally |
+
+## Project guidance
+
+- Read `AGENTS.md` before making changes with an AI coding agent.
+- Read `CONTEXT.md` for the project's current state and priorities.
+- Keep environment values out of documentation and support messages.
+- Review Git status and staged changes before every push.
+
+## Technology
+
+- React
+- Vite
+- Supabase
+- Tailwind CSS
+- ESLint
