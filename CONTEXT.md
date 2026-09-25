@@ -17,6 +17,7 @@ Connect the existing app repository to the parent workspace's routing and durabl
 - Keep project instructions and context in the app repository so they travel with the project when it is cloned or published.
 - Keep Antonio's personal voice profile outside the app repository.
 - Do not begin a code audit or development work until Antonio defines the optimization objective.
+- Permit the required `esbuild@0.25.4` installation script explicitly through the package-level `allowScripts` policy.
 
 ## Repository hygiene note
 
